@@ -1,0 +1,16 @@
+python main_train_quad.py  --train_method fine-tuning --seed 0 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 0 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 1 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 1 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 2 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 2 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 3 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 3 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 4 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 4 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 5 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 5 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 6 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 6 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method fine-tuning --seed 7 --config quadrotor_6D.yaml
+python main_train_quad.py  --train_method verification-only --seed 7 --config quadrotor_6D.yaml

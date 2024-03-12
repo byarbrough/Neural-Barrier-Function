@@ -1,8 +1,5 @@
-# Neural-Barrier-Function
-Learn a NN vector barrier function with a convex optimization-based fine-tuning step. 
-
 ## Installation
-
+Create a conda environment. 
 ```bash
 conda create --name test python==3.7.13
 conda activate test
@@ -24,8 +21,11 @@ conda install -c conda-forge cvxpy
 ```
 
 ## Run experiments
-In your terminal, run
+To run the experiments in the `examples` folder, run the following commands in the terminal: 
+
 ```
 cd examples/double_integrator
-python main_iter_train_double_integrator.py --config ab_crown.yaml 
+python main_iter_train_double_integrator.py --config double_integrator.yaml --seed 0 --method fine-tuning
 ```
+
+The experimental setup parameters are included in the `yaml` file with comments. 
