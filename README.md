@@ -4,8 +4,9 @@ Verifying the safety of a complex dynamical system is a long-standing challenge 
 - [Verification-Aided Learning of Neural Network Barrier Functions with
 Termination Guarantees](https://arxiv.org/pdf/2403.07308). Shaoru Chen, Lekan Molu, Mahyar Fazlyab. American Control Conference (ACC), 2024
 
-More specifically, we want to find the best way to (1) handle verification failure and (2) retrain the NN safety certificate. 
+More specifically, we want to find the best way to (1) handle verification failure and (2) retrain the NN safety certificate. A straightforward method follows the "train-verify" procedure, and if the verification fails, we augment the training dataset with the counterexamples found and retrain the NN barrier function. However, we don't have much control over this process and the loop between training and verification may never terminate. This repository implements a "**train-finetune**" procedure where the last linear layer of the NN is fine-tuned through **a convex optimization algorithm** that achieves strong convergence guarantees. The "train-finetune" framework also achieves boosted success rate in learning a formal NN safety certificate in practice. 
 
+<img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_problem_overview.png" width=500, height=300> 
 
 ## Installation
 The following environment setup has been tested. 
