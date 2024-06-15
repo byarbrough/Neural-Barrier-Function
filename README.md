@@ -31,7 +31,7 @@ For a double integrator system controlled by a ReLU network controller, the foll
 
 The following table shows that the proposed "train-finetune" framework achieves better success rate than the "train-verify" framework in learning a valid NN barrier function. 
 
-<img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_success_rate.png" width=500, height=200> 
+<img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_success_rate.png" width=600, height=200> 
 
 ## Codebase Organization 
 - In the experiments, we apply a mixed-integer programming (MIP)-based NN verifier and [alpha, beta-CROWN](https://github.com/Verified-Intelligence/alpha-beta-CROWN) for testing. The implementation of the MIP-based verificaiton is based on [Gurobi](https://www.gurobi.com/resources/mixed-integer-programming-mip-a-primer-on-the-basics/) and can be found in [ACCPM.py](https://github.com/ShaoruChen/Neural-Barrier-Function/blob/150067fa3d4db9db8ecfc62bbebd696714213281/cutting_plane/ACCPM.py#L137). Codes of alpha, beta-CROWN is included in the [complete_verifier](https://github.com/ShaoruChen/Neural-Barrier-Function/tree/main/complete_verifier) folder where [complete_verification.py](https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/complete_verifier/complete_verification.py) provides interfaces for verification of NN barrier functions.
