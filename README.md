@@ -24,9 +24,14 @@ The fine-tuning step follows a counterexample guided inductive synthesis (CEGIS)
 
 <img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_fine_tuning_diagram.png" width=600, height=300> 
 
+## Numerical Examples
+For a double integrator system controlled by a ReLU network controller, the following figure shows that the learned NN barrier function can effectively separate the system's trajectories and the unsafe region:
 
+<img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_DI_barrier.png" width=400, height=300> 
 
+The following table shows that the proposed "train-finetune" framework achieves better success rate than the "train-verify" framework in learning a valid NN barrier function. 
 
+<img src="https://github.com/ShaoruChen/Neural-Barrier-Function/blob/main/Documents/Figures/VAL_success_rate.png" width=500, height=200> 
 
 
 
