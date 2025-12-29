@@ -14,8 +14,8 @@ def generate_training_data(dyn_fcn, X, N, random=True, load_file_name=None):
     # if filename is not None, load the existing file
     if load_file_name is not None:
         data = load_pickle_file(load_file_name)
-        input_samples = data["train_data"]
-        labels = data["label_data"]
+        input_samples = data['train_data']
+        labels = data['label_data']
     else:
         if random:
             input_samples = uniform_random_sample_from_Polyhedron(X, N)
@@ -27,7 +27,7 @@ def generate_training_data(dyn_fcn, X, N, random=True, load_file_name=None):
 
 def sample_vector_field(dyn_fcn, samples):
     # num_samples, nx = samples.shape
-    if hasattr(dyn_fcn, "device"):
+    if hasattr(dyn_fcn, 'device'):
         device = dyn_fcn.device
         samples_tensor = torch.from_numpy(samples).to(torch.float).to(device)
     else:
@@ -68,10 +68,10 @@ def find_bounding_box(X):
     nx = A.shape[1]
 
     lb_sol = [linear_program(np.eye(nx)[i], A, b) for i in range(nx)]
-    lb_val = [lb_sol[i]["min"] for i in range(nx)]
+    lb_val = [lb_sol[i]['min'] for i in range(nx)]
 
     ub_sol = [linear_program(-np.eye(nx)[i], A, b) for i in range(nx)]
-    ub_val = [-ub_sol[i]["min"] for i in range(nx)]
+    ub_val = [-ub_sol[i]['min'] for i in range(nx)]
 
     return lb_val, ub_val
 
@@ -172,13 +172,13 @@ def uniform_random_sample_from_box(bounds_list, N):
 
 # save and load data
 def load_pickle_file(file_name):
-    with open(file_name, "rb") as config_dictionary_file:
+    with open(file_name, 'rb') as config_dictionary_file:
         data = pickle.load(config_dictionary_file)
     return data
 
 
 def pickle_file(data, file_name):
-    with open(file_name, "wb") as config_dictionary_file:
+    with open(file_name, 'wb') as config_dictionary_file:
         pickle.dump(data, config_dictionary_file)
 
 
@@ -212,9 +212,9 @@ def scale_polyhedron(X, gamma):
     return Y
 
 
-def set_seed(seed=0, device="cpu"):
+def set_seed(seed=0, device='cpu'):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    if device == "cuda":
+    if device == 'cuda':
         torch.cuda.manual_seed(seed)

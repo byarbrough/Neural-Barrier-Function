@@ -13,7 +13,7 @@ from pympc.optimization.solvers.gurobi import (
 # from pympc.optimization.solvers.drake import linear_program as lp_drake, quadratic_program as qp_drake, mixed_integer_quadratic_program as miqp_drake
 
 
-def linear_program(f, A, b, C=None, d=None, solver="pnnls"):
+def linear_program(f, A, b, C=None, d=None, solver='pnnls'):
     """
     Calls the desired solver to solve the linear program min_x f^T x s.t. A x <= b, C x = d.
 
@@ -52,17 +52,17 @@ def linear_program(f, A, b, C=None, d=None, solver="pnnls"):
     """
 
     # select solver
-    if solver == "pnnls":
+    if solver == 'pnnls':
         return lp_pnnls(f, A, b, C, d)
-    elif solver == "gurobi":
+    elif solver == 'gurobi':
         return lp_gurobi(f, A, b, C, d)
-    elif solver == "drake":
+    elif solver == 'drake':
         return lp_drake(f, A, b, C, d)
     else:
-        raise ValueError("unknown solver " + str(solver) + ".")
+        raise ValueError('unknown solver ' + str(solver) + '.')
 
 
-def quadratic_program(H, f, A, b, C=None, d=None, solver="pnnls"):
+def quadratic_program(H, f, A, b, C=None, d=None, solver='pnnls'):
     """
     Calls the desired solver to solve the strictly convex (H > 0) quadratic program min .5 x' H x + f' x s.t. A x <= b, C x  = d.
 
@@ -103,17 +103,17 @@ def quadratic_program(H, f, A, b, C=None, d=None, solver="pnnls"):
     """
 
     # select solver
-    if solver == "pnnls":
+    if solver == 'pnnls':
         return qp_pnnls(H, f, A, b, C, d)
-    elif solver == "gurobi":
+    elif solver == 'gurobi':
         return qp_gurobi(H, f, A, b, C, d)
-    elif solver == "drake":
+    elif solver == 'drake':
         return qp_drake(H, f, A, b, C, d)
     else:
-        raise ValueError("unknown solver " + str(solver) + ".")
+        raise ValueError('unknown solver ' + str(solver) + '.')
 
 
-def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, solver="gurobi"):
+def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, solver='gurobi'):
     """
     Calls the desired solver to solve the strictly convex (H > 0) mixed-integer quadratic program min .5 x' H x + f' x s.t. A x <= b, C x  = d.
     The first nc variables in x are continuous, the remaining are binaries.
@@ -151,9 +151,9 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, solver="guro
     """
 
     # select solver
-    if solver == "gurobi":
+    if solver == 'gurobi':
         return miqp_gurobi(nc, H, f, A, b, C, d)
-    if solver == "drake":
+    if solver == 'drake':
         return miqp_drake(nc, H, f, A, b, C, d)
     else:
-        raise ValueError("unknown solver " + str(solver) + ".")
+        raise ValueError('unknown solver ' + str(solver) + '.')

@@ -36,20 +36,20 @@ class Polyhedron(object):
 
         # check and store inequalities
         if len(b.shape) > 1:
-            raise ValueError("b must be a one dimensional array.")
+            raise ValueError('b must be a one dimensional array.')
         self._same_number_rows(A, b)
         self.A = A
         self.b = b
 
         # check and store equalities
         if (C is None) != (d is None):
-            raise ValueError("missing C or d.")
+            raise ValueError('missing C or d.')
         if C is None:
             self.C = np.zeros((0, A.shape[1]))
             self.d = np.zeros(0)
         else:
             if len(d.shape) > 1:
-                raise ValueError("b must be a one dimensional array.")
+                raise ValueError('b must be a one dimensional array.')
             self._same_number_rows(C, d)
             self.C = C
             self.d = d
@@ -256,7 +256,7 @@ class Polyhedron(object):
 
         # check if n is provided
         if indices is not None and n is None:
-            raise ValueError("specify the length of x to instantiate the polyhedron.")
+            raise ValueError('specify the length of x to instantiate the polyhedron.')
 
         # construct the polyhedron
         if n is None:
@@ -287,7 +287,7 @@ class Polyhedron(object):
 
         # check if n is provided
         if indices is not None and n is None:
-            raise ValueError("specify the length of x to instantiate the polyhedron.")
+            raise ValueError('specify the length of x to instantiate the polyhedron.')
 
         # construct the polyhedron
         if n is None:
@@ -320,11 +320,11 @@ class Polyhedron(object):
 
         # check if n is provided
         if indices is not None and n is None:
-            raise ValueError("specify the length of x to instantiate the polyhedron.")
+            raise ValueError('specify the length of x to instantiate the polyhedron.')
 
         # check size of the bounds
         if x_min.size != x_max.size:
-            raise ValueError("bounds must have the same size.")
+            raise ValueError('bounds must have the same size.')
 
         # construct the polyhedron
         if n is None:
@@ -375,7 +375,7 @@ class Polyhedron(object):
 
         # check nomber of rows
         if E.shape[0] != f.size:
-            raise ValueError("incoherent size of the inputs.")
+            raise ValueError('incoherent size of the inputs.')
 
     def normalize(self, tol=1.0e-7):
         """
@@ -444,7 +444,7 @@ class Polyhedron(object):
             sol = linear_program(-E[i], E_minimal, f_relaxed)
 
             # remove redundant facets from the list
-            if -sol["min"] - f[i] < tol:
+            if -sol['min'] - f[i] < tol:
                 minimal_facets.remove(i)
 
         return minimal_facets
@@ -459,7 +459,7 @@ class Polyhedron(object):
 
         # raise error if empty polyhedron
         if minimal_facets is None:
-            raise ValueError("empty polyhedron, cannot remove redundant inequalities.")
+            raise ValueError('empty polyhedron, cannot remove redundant inequalities.')
 
         # remove redundancy
         self.A = self.A[minimal_facets]
@@ -490,9 +490,9 @@ class Polyhedron(object):
         # change of variables
         N = nullspace_basis(self.C)
         if N.shape[1] == 0:
-            raise ValueError("equality constraints C x = d do not have a nullspace.")
+            raise ValueError('equality constraints C x = d do not have a nullspace.')
         if N.shape[1] != self.C.shape[1] - self.C.shape[0]:
-            raise ValueError("equality constraints C x = d are linearly dependent.")
+            raise ValueError('equality constraints C x = d are linearly dependent.')
         R = nullspace_basis(N.T)
 
         # new representation
@@ -521,7 +521,7 @@ class Polyhedron(object):
         H = np.eye(self.A.shape[1])
         f = np.zeros(self.A.shape[1])
         sol = quadratic_program(H, f, self.A, self.b, self.C, self.d)
-        self._empty = sol["min"] is None
+        self._empty = sol['min'] is None
 
         return self._empty
 
@@ -571,7 +571,7 @@ class Polyhedron(object):
             A.T,  # C
             np.zeros(m),  # d
         )
-        self._bounded = sol["min"] is not None
+        self._bounded = sol['min'] is not None
 
         return self._bounded
 
@@ -633,7 +633,7 @@ class Polyhedron(object):
         included = True
         for i in range(A2.shape[0]):
             sol = linear_program(-A2[i], P1.A, P1.b)
-            penetration = -sol["min"] - b2[i]
+            penetration = -sol['min'] - b2[i]
             if penetration > tol:
                 included = False
                 break
@@ -754,8 +754,8 @@ class Polyhedron(object):
 
         # solve and reshape result
         sol = linear_program(f_lp, A_lp, b)
-        radius = sol["min"]
-        center = sol["argmin"]
+        radius = sol['min']
+        center = sol['argmin']
         if radius is not None:
             radius = -radius
             center = center[:-1]
@@ -840,11 +840,11 @@ class Polyhedron(object):
 
         # check emptyness, boundedness, and full-dimensionality
         if self.empty:
-            raise ValueError("cannot project empty polyhedra.")
+            raise ValueError('cannot project empty polyhedra.')
         if not self.bounded:
-            raise ValueError("cannot project unbounded polyhedra.")
+            raise ValueError('cannot project unbounded polyhedra.')
         if self.C.shape[0] > 0:
-            raise ValueError("cannot project lower-dimensional polyhedra.")
+            raise ValueError('cannot project lower-dimensional polyhedra.')
 
         # call convex-hull method for orthogonal projections
         A, b, vertices = convex_hull_method(self.A, self.b, residual_dimensions)
@@ -890,11 +890,11 @@ class Polyhedron(object):
 
         # check dimensions
         if len(residual_dimensions) != 2:
-            raise ValueError("wrong number of residual dimensions.")
+            raise ValueError('wrong number of residual dimensions.')
 
         # extract vertices components
         if self.vertices is None:
-            print("Cannot plot unbounded or empty polyhedra.")
+            print('Cannot plot unbounded or empty polyhedra.')
             return
 
         # call qhull thorugh scipy for the convex hull (needed to order the vertices in counterclockwise order)
@@ -911,8 +911,8 @@ class Polyhedron(object):
         ax = plt.gca()
         patch = patches.PathPatch(path, **kwargs)
         ax.add_patch(patch)
-        plt.xlabel(r"$x_" + str(residual_dimensions[0] + 1) + "$")
-        plt.ylabel(r"$x_" + str(residual_dimensions[1] + 1) + "$")
+        plt.xlabel(r'$x_' + str(residual_dimensions[0] + 1) + '$')
+        plt.ylabel(r'$x_' + str(residual_dimensions[1] + 1) + '$')
         ax.autoscale_view()
 
         return
@@ -1018,7 +1018,7 @@ def _get_two_vertices(A, b, n):
     vertices = []
     for f in [a, -a]:
         sol = linear_program(f, A, b)
-        vertices.append(sol["argmin"][:n])
+        vertices.append(sol['argmin'][:n])
 
     return vertices
 
@@ -1054,10 +1054,10 @@ def _get_inner_simplex(A, b, vertices, tol=1.0e-7):
         sol = linear_program(f, A, b)
 
         # check the length of the expansion wrt to the plane, if zero expand in the opposite direction
-        expansion = np.abs(a.dot(sol["argmin"][:i]) - d)  # >= 0
+        expansion = np.abs(a.dot(sol['argmin'][:i]) - d)  # >= 0
         if expansion < tol:
             sol = linear_program(-f, A, b)
-        vertices.append(sol["argmin"][:n])
+        vertices.append(sol['argmin'][:n])
 
     return vertices
 
@@ -1111,10 +1111,10 @@ def _expand_simplex(A, b, hull, tol=1.0e-7):
                 sol = linear_program(f, A, b)
 
                 # check if expansion wrt to the halfplane is greater than zero
-                expansion = -sol["min"] - d  # >= 0
+                expansion = -sol['min'] - d  # >= 0
                 if expansion > tol:
                     convergence = False
-                    hull.add_points(sol["argmin"][:n].reshape(1, n))
+                    hull.add_points(sol['argmin'][:n].reshape(1, n))
                     break
 
     return hull

@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch
 
 
-def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, mark=""):
+def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, mark=''):
     nx, ny = len(x), len(y)
 
     dims, L, weights_list, negative_slope = get_nn_info(net)
@@ -16,7 +16,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
     for idx in range(L + 1):
         z.append(
             gurobi_model.addVars(
-                dims[idx], lb=-gp.GRB.INFINITY, name="z_" + str(mark) + "_" + str(idx)
+                dims[idx], lb=-gp.GRB.INFINITY, name='z_' + str(mark) + '_' + str(idx)
             )
         )
 
@@ -26,7 +26,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
         t.append(
             gurobi_model.addVars(
                 dims[idx + 1],
-                name="t_" + str(mark) + "_" + str(idx),
+                name='t_' + str(mark) + '_' + str(idx),
                 vtype=gp.GRB.BINARY,
             )
         )
@@ -34,7 +34,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
     gurobi_model.update()
 
     # encode the ReLU network using mixed integer linear constraints
-    gurobi_model.addConstrs((z[0][i] == x[i] for i in range(nx)), name="initialization")
+    gurobi_model.addConstrs((z[0][i] == x[i] for i in range(nx)), name='initialization')
 
     gurobi_model.addConstrs(
         (
@@ -45,7 +45,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
             + weights_list[L][1][i]
             for i in range(ny)
         ),
-        name="outputConstr" + "_step_" + str(mark),
+        name='outputConstr' + '_step_' + str(mark),
     )
 
     gurobi_model.addConstrs(
@@ -62,7 +62,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
             for ell in range(L)
             for i in range(len(z[ell + 1]))
         ),
-        name="binary_1" + "_step_" + str(mark),
+        name='binary_1' + '_step_' + str(mark),
     )
 
     gurobi_model.addConstrs(
@@ -80,7 +80,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
             for ell in range(L)
             for i in range(len(z[ell + 1]))
         ),
-        name="binary_3" + "_step_" + str(mark),
+        name='binary_3' + '_step_' + str(mark),
     )
 
     gurobi_model.addConstrs(
@@ -98,7 +98,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
             for ell in range(L)
             for i in range(len(z[ell + 1]))
         ),
-        name="binary_2" + "_step_" + str(mark),
+        name='binary_2' + '_step_' + str(mark),
     )
 
     gurobi_model.addConstrs(
@@ -117,7 +117,7 @@ def add_gurobi_constr_for_MLP(gurobi_model, net, x, y, pre_act_lb, pre_act_ub, m
             for ell in range(L)
             for i in range(len(z[ell + 1]))
         ),
-        name="binary_4" + "_step_" + str(mark),
+        name='binary_4' + '_step_' + str(mark),
     )
 
     gurobi_model.update()
@@ -138,7 +138,7 @@ def search_counterexamples(
 
     device = next(barrier_fcn.net.parameters()).device
 
-    if type == "x0":
+    if type == 'x0':
         # look for counterexamples that falsify the initial set constraint
         X0 = problem.X0
         if samples is None:
@@ -165,7 +165,7 @@ def search_counterexamples(
             barrier_fcn.net = ori_net
         return ce, sol, output_val
 
-    elif type == "xu":
+    elif type == 'xu':
         # look for counterexamples that falsify the unsafe set constraint
         Xu = problem.Xu
         if samples is None:
@@ -191,7 +191,7 @@ def search_counterexamples(
             barrier_fcn.net = ori_net
         return ce, sol, unsafe_output_val
 
-    elif type == "x":
+    elif type == 'x':
         # look for counterexamples that falsify the decrease constraint
         X = problem.X
         if samples is None:

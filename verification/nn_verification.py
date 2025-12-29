@@ -11,8 +11,8 @@ def find_preactivation_bounds(net, domain):
 
     input_lb, input_ub = find_bounding_box(domain)
     input_lb, input_ub = (
-        np.array(input_lb).astype("float32"),
-        np.array(input_ub).astype("float32"),
+        np.array(input_lb).astype('float32'),
+        np.array(input_ub).astype('float32'),
     )
     input_lb, input_ub = (
         torch.from_numpy(input_lb).unsqueeze(0).to(device),
@@ -31,12 +31,12 @@ def find_preactivation_bounds(net, domain):
         ):
             temp_net = nn.Sequential(*layer_list)
             pre_act_lb, pre_act_ub = output_Lp_bounds_LiRPA(
-                temp_net, input_lb, input_ub, method="backward"
+                temp_net, input_lb, input_ub, method='backward'
             )
             pre_act_bounds.append(
                 {
-                    "lb": pre_act_lb.squeeze(0).detach().cpu().numpy(),
-                    "ub": pre_act_ub.squeeze(0).detach().cpu().numpy(),
+                    'lb': pre_act_lb.squeeze(0).detach().cpu().numpy(),
+                    'ub': pre_act_ub.squeeze(0).detach().cpu().numpy(),
                 }
             )
 
@@ -46,17 +46,17 @@ def find_preactivation_bounds(net, domain):
 
     temp_net = nn.Sequential(*layer_list)
     output_lb, output_ub = output_Lp_bounds_LiRPA(
-        temp_net, input_lb, input_ub, method="backward"
+        temp_net, input_lb, input_ub, method='backward'
     )
     output_bounds = {
-        "lb": output_lb.squeeze(0).detach().cpu().numpy(),
-        "ub": output_ub.squeeze(0).detach().cpu().numpy(),
+        'lb': output_lb.squeeze(0).detach().cpu().numpy(),
+        'ub': output_ub.squeeze(0).detach().cpu().numpy(),
     }
 
     return pre_act_bounds, output_bounds
 
 
-def output_Lp_bounds_LiRPA(nn_model, lb, ub, method="backward", C=None):
+def output_Lp_bounds_LiRPA(nn_model, lb, ub, method='backward', C=None):
     center = (lb + ub) / 2
     radius = (ub - lb) / 2
 
@@ -65,9 +65,9 @@ def output_Lp_bounds_LiRPA(nn_model, lb, ub, method="backward", C=None):
     # Make the input a BoundedTensor with perturbation
     my_input = BoundedTensor(center, ptb)
     # Compute LiRPA bounds
-    if "optimized" in method or "alpha" in method:
+    if 'optimized' in method or 'alpha' in method:
         model.set_bound_opts(
-            {"optimize_bound_args": {"ob_iteration": 20, "ob_lr": 0.1, "ob_verbose": 0}}
+            {'optimize_bound_args': {'ob_iteration': 20, 'ob_lr': 0.1, 'ob_verbose': 0}}
         )
 
     output = model.compute_bounds(x=(my_input,), C=C, method=method)

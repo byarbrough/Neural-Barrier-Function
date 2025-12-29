@@ -26,9 +26,9 @@ class Dynamics_Trainer:
         input_data, labels = generate_training_data(
             self.dyn_fcn, self.domain, num_samples
         )
-        dataset = {"x": input_data, "y": labels}
+        dataset = {'x': input_data, 'y': labels}
         self.sample_set = dataset
-        sample_path = os.path.join(self.save_dir, "dynamics_samples.p")
+        sample_path = os.path.join(self.save_dir, 'dynamics_samples.p')
         torch.save(self.sample_set, sample_path)
         return dataset
 
@@ -40,15 +40,15 @@ class Dynamics_Trainer:
         self, batch_size=50, num_epochs=500, lr=0.001, l1_lambda=None, save_path=None
     ):
         samples = self.sample_set
-        x_samples = (torch.from_numpy(samples["x"].astype("float32")).to(self.device),)
-        y_samples = torch.from_numpy(samples["y"].astype("float32")).to(self.device)
+        x_samples = (torch.from_numpy(samples['x'].astype('float32')).to(self.device),)
+        y_samples = torch.from_numpy(samples['y'].astype('float32')).to(self.device)
 
         dyn_dataset = torch.utils.data.TensorDataset(x_samples, y_samples)
         nn_model = self.nn_model
         loss_fcn = torch.nn.MSELoss()
 
         if save_path is None:
-            save_path = os.path.join(self.save_dir, "nn_dyn_model.p")
+            save_path = os.path.join(self.save_dir, 'nn_dyn_model.p')
 
         trained_model_state_dict = train_nn_approximator(
             dyn_dataset,
@@ -88,7 +88,7 @@ class Controller_Trainer:
     def generate_training_samples(self, num_samples=10000):
         data = uniform_random_sample_from_Polyhedron(self.domain, num_samples)
         self.sample_set = data
-        sample_path = os.path.join(self.save_dir, "init_state_samples.p")
+        sample_path = os.path.join(self.save_dir, 'init_state_samples.p')
         torch.save(self.sample_set, sample_path)
         return data
 
@@ -118,7 +118,7 @@ class Controller_Trainer:
         self, num_epochs=500, l1_lambda=None, horizon=5, save_path=None
     ):
         samples = self.sample_set
-        x_samples = (torch.from_numpy(samples.astype("float32")).to(self.device),)
+        x_samples = (torch.from_numpy(samples.astype('float32')).to(self.device),)
         y_samples = torch.ones((x_samples.size(0),), dtype=x_samples.dtype).to(
             self.device
         )
@@ -145,11 +145,11 @@ class Controller_Trainer:
 
                 running_loss += loss.item()
             print(
-                f"epoch {epoch} training loss " + f"{running_loss / len(dataloader)},"
+                f'epoch {epoch} training loss ' + f'{running_loss / len(dataloader)},'
             )
 
         if save_path is None:
-            save_path = os.path.join(self.save_dir, "controller_model.p")
+            save_path = os.path.join(self.save_dir, 'controller_model.p')
 
         torch.save(controller.state_dict(), save_path)
 
@@ -201,7 +201,7 @@ def train_nn_approximator(
             best_test_loss = test_loss
 
         print(
-            f"epoch {epoch} training loss {running_loss / len(train_loader)}, test loss {test_loss}"
+            f'epoch {epoch} training loss {running_loss / len(train_loader)}, test loss {test_loss}'
         )
 
     if save_path is not None:

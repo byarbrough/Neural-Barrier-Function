@@ -116,7 +116,7 @@ class LinearSystem(object):
 
         # check controllability
         if not self.controllable:
-            raise ValueError("uncontrollable system, cannot solve Riccati equation.")
+            raise ValueError('uncontrollable system, cannot solve Riccati equation.')
 
         # cost to go
         P = solve_discrete_are(self.A, self.B, Q, R)
@@ -202,7 +202,7 @@ class LinearSystem(object):
         return self._controllable
 
     @staticmethod
-    def from_continuous(A, B, h, method="zero_order_hold"):
+    def from_continuous(A, B, h, method='zero_order_hold'):
         """
         Instantiates a discrete-time linear system starting from its continuous time representation.
 
@@ -225,12 +225,12 @@ class LinearSystem(object):
         c = np.zeros(A.shape[0])
 
         # discretize
-        if method == "zero_order_hold":
+        if method == 'zero_order_hold':
             A_d, B_d, _ = zero_order_hold(A, B, c, h)
-        elif method == "explicit_euler":
+        elif method == 'explicit_euler':
             A_d, B_d, _ = explicit_euler(A, B, c, h)
         else:
-            raise ValueError("unknown discretization method.")
+            raise ValueError('unknown discretization method.')
 
         return LinearSystem(A_d, B_d)
 
@@ -254,12 +254,12 @@ class LinearSystem(object):
 
         # check that offset setm is zero
         if not np.allclose(c, np.zeros(x.shape[0])):
-            raise ValueError("The given system has a non zero offset.")
+            raise ValueError('The given system has a non zero offset.')
 
         return LinearSystem(A, B)
 
     @staticmethod
-    def from_symbolic_continuous(x, u, x_dot, h, method="zero_order_hold"):
+    def from_symbolic_continuous(x, u, x_dot, h, method='zero_order_hold'):
         """
         Instatiates a LinearSystem starting from the symbolic value of the next state.
 
@@ -282,7 +282,7 @@ class LinearSystem(object):
 
         # check that offset setm is zero
         if not np.allclose(c, np.zeros(x.shape[0])):
-            raise ValueError("The given system has a non zero offset.")
+            raise ValueError('The given system has a non zero offset.')
 
         return LinearSystem.from_continuous(A, B, h, method)
 
@@ -364,7 +364,7 @@ class AffineSystem(object):
         return condense_pwa_system([self], [0] * N)
 
     @staticmethod
-    def from_continuous(A, B, c, h, method="zero_order_hold"):
+    def from_continuous(A, B, c, h, method='zero_order_hold'):
         """
         Instantiates a discrete-time affine system starting from its continuous time representation.
 
@@ -386,12 +386,12 @@ class AffineSystem(object):
         check_affine_system(A, B, c, h)
 
         # discretize
-        if method == "zero_order_hold":
+        if method == 'zero_order_hold':
             A_d, B_d, c_d = zero_order_hold(A, B, c, h)
-        elif method == "explicit_euler":
+        elif method == 'explicit_euler':
             A_d, B_d, c_d = explicit_euler(A, B, c, h)
         else:
-            raise ValueError("unknown discretization method.")
+            raise ValueError('unknown discretization method.')
 
         return AffineSystem(A_d, B_d, c_d)
 
@@ -413,7 +413,7 @@ class AffineSystem(object):
         return AffineSystem(*get_state_transition_matrices(x, u, x_next))
 
     @staticmethod
-    def from_symbolic_continuous(x, u, x_dot, h, method="zero_order_hold"):
+    def from_symbolic_continuous(x, u, x_dot, h, method='zero_order_hold'):
         """
         Instatiates a LinearSystem starting from the symbolic value of the next state.
 
@@ -457,14 +457,14 @@ class PieceWiseAffineSystem(object):
         # same number of systems and domains
         if len(affine_systems) != len(domains):
             raise ValueError(
-                "the number of affine systems has to be equal to the number of domains."
+                'the number of affine systems has to be equal to the number of domains.'
             )
 
         # same number of states for each system
         nx = set(S.nx for S in affine_systems)
         if len(nx) != 1:
             raise ValueError(
-                "all the affine systems must have the same number of states."
+                'all the affine systems must have the same number of states.'
             )
         self.nx = list(nx)[0]
 
@@ -472,19 +472,19 @@ class PieceWiseAffineSystem(object):
         nu = set(S.nu for S in affine_systems)
         if len(nu) != 1:
             raise ValueError(
-                "all the affine systems must have the same number of inputs."
+                'all the affine systems must have the same number of inputs.'
             )
         self.nu = list(nu)[0]
 
         # same dimensions for each domain
         nxu = set(D.A.shape[1] for D in domains)
         if len(nxu) != 1:
-            raise ValueError("all the domains must have equal dimnesionality.")
+            raise ValueError('all the domains must have equal dimnesionality.')
 
         # dimension of each domain equal too number of states plus number of inputs
         if list(nxu)[0] != self.nx + self.nu:
             raise ValueError(
-                "the domains and the affine systems must have coherent dimensions."
+                'the domains and the affine systems must have coherent dimensions.'
             )
 
         # make instances of LinearSystem instances of AffineSystem
@@ -535,11 +535,11 @@ class PieceWiseAffineSystem(object):
             # if outside the domain, raise value error
             if mode is None:
                 raise ValueError(
-                    "simulation reached an unfeasible point x = "
+                    'simulation reached an unfeasible point x = '
                     + str(x[t])
-                    + ", u = "
+                    + ', u = '
                     + str(u[t])
-                    + "."
+                    + '.'
                 )
 
             # compute next state and append values
@@ -647,16 +647,16 @@ def mcais(A, X, verbose=False):
     eig_max = np.max(np.absolute(np.linalg.eig(A)[0]))
     if eig_max > 1.0:
         raise ValueError(
-            "unstable system, cannot derive maximal constraint-admissible set."
+            'unstable system, cannot derive maximal constraint-admissible set.'
         )
     [nc, nx] = X.A.shape
     if not X.contains(np.zeros((nx, 1))):
         raise ValueError(
-            "the origin is not contained in the constraint set, cannot derive maximal constraint-admissible set."
+            'the origin is not contained in the constraint set, cannot derive maximal constraint-admissible set.'
         )
     if not X.bounded:
         raise ValueError(
-            "unbounded constraint set, cannot derive maximal constraint-admissible set."
+            'unbounded constraint set, cannot derive maximal constraint-admissible set.'
         )
 
     # initialize mcais
@@ -671,13 +671,13 @@ def mcais(A, X, verbose=False):
         residuals = []
         for i in range(X.A.shape[0]):
             sol = linear_program(-J[i], O_inf.A, O_inf.b)
-            residuals.append(-sol["min"] - X.b[i])
+            residuals.append(-sol['min'] - X.b[i])
 
         # print status of the algorithm
         if verbose:
-            (print("Time horizon: " + str(t) + "."),)
-            (print("Convergence index: " + str(max(residuals)) + "."),)
-            (print("Number of facets: " + str(O_inf.A.shape[0]) + ".   \r"),)
+            (print('Time horizon: ' + str(t) + '.'),)
+            (print('Convergence index: ' + str(max(residuals)) + '.'),)
+            (print('Number of facets: ' + str(O_inf.A.shape[0]) + '.   \r'),)
 
         # convergence check
         new_facets = [i for i, r in enumerate(residuals) if r > 0.0]
@@ -690,11 +690,11 @@ def mcais(A, X, verbose=False):
 
     # remove redundant facets
     if verbose:
-        print("\nMaximal constraint-admissible invariant set found.")
-        (print("Removing redundant facets ..."),)
+        print('\nMaximal constraint-admissible invariant set found.')
+        (print('Removing redundant facets ...'),)
     O_inf.remove_redundant_inequalities()
     if verbose:
-        print("minimal facets are " + str(O_inf.A.shape[0]) + ".")
+        print('minimal facets are ' + str(O_inf.A.shape[0]) + '.')
 
     return O_inf
 

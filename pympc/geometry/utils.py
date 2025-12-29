@@ -155,7 +155,7 @@ def same_vectors(v_list, u_list):
     # check inputs
     for z_list in [v_list, u_list]:
         if any(len(z.shape) >= 2 for z in z_list):
-            raise ValueError("input vectors must be 1-dimensional arrays.")
+            raise ValueError('input vectors must be 1-dimensional arrays.')
 
     # construct matrices
     V = np.vstack(v_list)

@@ -53,27 +53,27 @@ class NN_Dynamics(nn.Module):
 
     def initialize_pre_act_bounds(self):
         pre_act_bounds, output_bounds = find_preactivation_bounds(self.net, self.domain)
-        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
-        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
+        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
+        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
         self.output_bounds = output_bounds
 
         self.output_domain = Polyhedron.from_bounds(
-            output_bounds["lb"], output_bounds["ub"]
+            output_bounds['lb'], output_bounds['ub']
         )
         return pre_act_bounds, output_bounds
 
-    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark=""):
+    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark=''):
         # add constraints to the gurobi model to enforce the following constraints: output_var = NN(input_var)
         nx = self.n_in
         ny = self.n_out
 
         x = list()
         for i in range(nx):
-            x.append(gurobi_model.getVarByName(input_var + "[" + str(i) + "]"))
+            x.append(gurobi_model.getVarByName(input_var + '[' + str(i) + ']'))
 
         y = list()
         for i in range(nx):
-            y.append(gurobi_model.getVarByName(output_var + "[" + str(i) + "]"))
+            y.append(gurobi_model.getVarByName(output_var + '[' + str(i) + ']'))
 
         gurobi_model = add_gurobi_constr_for_MLP(
             gurobi_model, self.net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark

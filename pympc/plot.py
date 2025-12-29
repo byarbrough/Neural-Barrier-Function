@@ -17,7 +17,7 @@ def plot_state_space_trajectory(x, dim=[0, 1], text=False, label=None, **kwargs)
 
     # check inputs
     if len(dim) != 2:
-        raise ValueError("can plot only 2-dimensional trajectories.")
+        raise ValueError('can plot only 2-dimensional trajectories.')
 
     # plot trajectory
     for t in range(len(x) - 1):
@@ -35,14 +35,14 @@ def plot_state_space_trajectory(x, dim=[0, 1], text=False, label=None, **kwargs)
     # plot text
     for t in range(len(x)):
         if text:
-            plt.text(x[t][0], x[t][1], r"$x(" + str(t) + ")$")
+            plt.text(x[t][0], x[t][1], r'$x(' + str(t) + ')$')
 
     # scatter initial condition
-    plt.scatter(x[0][dim[0]], x[0][dim[1]], color="w", edgecolor="k", zorder=3)
+    plt.scatter(x[0][dim[0]], x[0][dim[1]], color='w', edgecolor='k', zorder=3)
 
     # axis labels
-    plt.xlabel(r"$x_{" + str(dim[0] + 1) + "}$")
-    plt.ylabel(r"$x_{" + str(dim[1] + 1) + "}$")
+    plt.xlabel(r'$x_{' + str(dim[0] + 1) + '}$')
+    plt.ylabel(r'$x_{' + str(dim[1] + 1) + '}$')
 
 
 def plot_input_sequence(u, h, u_bounds=None):
@@ -72,26 +72,26 @@ def plot_input_sequence(u, h, u_bounds=None):
 
         # plot input sequence
         u_i_sequence = [u[k][i] for k in range(N)]
-        (input_plot,) = plt.step(t, [u_i_sequence[0]] + u_i_sequence, "b")
+        (input_plot,) = plt.step(t, [u_i_sequence[0]] + u_i_sequence, 'b')
 
         # plot bounds if provided
         if u_bounds is not None:
             for bound in u_bounds:
-                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), "r")
+                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), 'r')
 
         # miscellaneous
-        plt.ylabel(r"$u_{" + str(i + 1) + "}$")
+        plt.ylabel(r'$u_{' + str(i + 1) + '}$')
         plt.xlim((0.0, N * h))
         if i == 0:
             if u_bounds is not None:
                 plt.legend(
                     [input_plot, bound_plot],
-                    ["Optimal control", "Control bounds"],
+                    ['Optimal control', 'Control bounds'],
                     loc=1,
                 )
             else:
-                plt.legend([input_plot], ["Optimal control"], loc=1)
-    plt.xlabel(r"$t$")
+                plt.legend([input_plot], ['Optimal control'], loc=1)
+    plt.xlabel(r'$t$')
 
 
 def plot_state_trajectory(x, h, x_bounds=None):
@@ -121,26 +121,26 @@ def plot_state_trajectory(x, h, x_bounds=None):
 
         # plot state trajectory
         x_i_trajectory = [x[k][i] for k in range(N + 1)]
-        (state_plot,) = plt.plot(t, x_i_trajectory, "b")
+        (state_plot,) = plt.plot(t, x_i_trajectory, 'b')
 
         # plot bounds if provided
         if x_bounds is not None:
             for bound in x_bounds:
-                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), "r")
+                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), 'r')
 
         # miscellaneous
-        plt.ylabel(r"$x_{" + str(i + 1) + "}$")
+        plt.ylabel(r'$x_{' + str(i + 1) + '}$')
         plt.xlim((0.0, N * h))
         if i == 0:
             if x_bounds is not None:
                 plt.legend(
                     [state_plot, bound_plot],
-                    ["Optimal trajectory", "State bounds"],
+                    ['Optimal trajectory', 'State bounds'],
                     loc=1,
                 )
             else:
-                plt.legend([state_plot], ["Optimal trajectory"], loc=1)
-    plt.xlabel(r"$t$")
+                plt.legend([state_plot], ['Optimal trajectory'], loc=1)
+    plt.xlabel(r'$t$')
 
 
 def plot_output_trajectory(C, x, h, y_bounds=None):
@@ -175,23 +175,23 @@ def plot_output_trajectory(C, x, h, y_bounds=None):
 
         # plot state trajectory
         y_i_trajectory = [y[k][i] for k in range(N + 1)]
-        (output_plot,) = plt.plot(t, y_i_trajectory, "b")
+        (output_plot,) = plt.plot(t, y_i_trajectory, 'b')
 
         # plot bounds if provided
         if y_bounds is not None:
             for bound in y_bounds:
-                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), "r")
+                (bound_plot,) = plt.step(t, bound[i] * np.ones(t.shape), 'r')
 
         # miscellaneous options
-        plt.ylabel(r"$y_{" + str(i + 1) + "}$")
+        plt.ylabel(r'$y_{' + str(i + 1) + '}$')
         plt.xlim((0.0, N * h))
         if i == 0:
             if y_bounds is not None:
                 plt.legend(
                     [output_plot, bound_plot],
-                    ["Optimal trajectory", "Output bounds"],
+                    ['Optimal trajectory', 'Output bounds'],
                     loc=1,
                 )
             else:
-                plt.legend([output_plot], ["Optimal trajectory"], loc=1)
-    plt.xlabel(r"$t$")
+                plt.legend([output_plot], ['Optimal trajectory'], loc=1)
+    plt.xlabel(r'$t$')

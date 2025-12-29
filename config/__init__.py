@@ -13,4 +13,4 @@ from . import barrier_config
 Config = barrier_config.Config
 Globals = barrier_config.Globals
 
-__all__ = ["Config", "Globals"]
+__all__ = ['Config', 'Globals']

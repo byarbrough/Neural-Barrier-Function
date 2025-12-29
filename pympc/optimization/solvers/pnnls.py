@@ -90,7 +90,7 @@ def linear_program(f, A, b, C=None, d=None, tol=1.0e-7):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError("missing C or d.")
+        raise ValueError('missing C or d.')
 
     # problem size
     n_ineq, n_x = A.shape
@@ -126,23 +126,23 @@ def linear_program(f, A, b, C=None, d=None, tol=1.0e-7):
 
     # initialize output
     sol = {
-        "min": None,
-        "argmin": None,
-        "active_set": None,
-        "multiplier_inequality": None,
-        "multiplier_equality": None,
+        'min': None,
+        'argmin': None,
+        'active_set': None,
+        'multiplier_inequality': None,
+        'multiplier_equality': None,
     }
 
     # fill solution if residual is almost zero
     if r < tol:
-        sol["argmin"] = x
-        sol["min"] = f.dot(sol["argmin"])
-        sol["multiplier_inequality"] = ys[:n_ineq]
-        sol["active_set"] = sorted(np.where(sol["multiplier_inequality"] > tol)[0])
+        sol['argmin'] = x
+        sol['min'] = f.dot(sol['argmin'])
+        sol['multiplier_inequality'] = ys[:n_ineq]
+        sol['active_set'] = sorted(np.where(sol['multiplier_inequality'] > tol)[0])
         if n_eq > 0:
             mul_eq_pos = ys[n_ineq : n_ineq + n_eq]
             mul_eq_neg = -ys[n_ineq + n_eq : n_ineq + 2 * n_eq]
-            sol["multiplier_equality"] = mul_eq_pos + mul_eq_neg
+            sol['multiplier_equality'] = mul_eq_pos + mul_eq_neg
 
     return sol
 
@@ -190,7 +190,7 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-7):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError("missing C or d.")
+        raise ValueError('missing C or d.')
 
     # problem size
     n_ineq, n_x = A.shape
@@ -220,25 +220,25 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-7):
 
     # initialize output
     sol = {
-        "min": None,
-        "argmin": None,
-        "active_set": None,
-        "multiplier_inequality": None,
-        "multiplier_equality": None,
+        'min': None,
+        'argmin': None,
+        'active_set': None,
+        'multiplier_inequality': None,
+        'multiplier_equality': None,
     }
 
     # if feasibile
     if r > tol:
         lam = y / (gamma[0] + m.dot(y))
-        sol["multiplier_inequality"] = lam[:n_ineq]
-        sol["argmin"] = -H_inv.dot(f + AC.T.dot(lam))
-        sol["min"] = 0.5 * sol["argmin"].dot(H).dot(sol["argmin"]) + f.dot(
-            sol["argmin"]
+        sol['multiplier_inequality'] = lam[:n_ineq]
+        sol['argmin'] = -H_inv.dot(f + AC.T.dot(lam))
+        sol['min'] = 0.5 * sol['argmin'].dot(H).dot(sol['argmin']) + f.dot(
+            sol['argmin']
         )
-        sol["active_set"] = sorted(np.where(sol["multiplier_inequality"] > tol)[0])
+        sol['active_set'] = sorted(np.where(sol['multiplier_inequality'] > tol)[0])
         if n_eq > 0:
             mul_eq_pos = lam[n_ineq : n_ineq + n_eq]
             mul_eq_neg = -lam[n_ineq + n_eq : n_ineq + 2 * n_eq]
-            sol["multiplier_equality"] = mul_eq_pos + mul_eq_neg
+            sol['multiplier_equality'] = mul_eq_pos + mul_eq_neg
 
     return sol

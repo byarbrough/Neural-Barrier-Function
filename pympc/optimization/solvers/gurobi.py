@@ -43,7 +43,7 @@ def linear_program(f, A, b, C=None, d=None, **kwargs):
     model = _build_model(f=f, A=A, b=b, C=C, d=d)
 
     # set the parameters
-    model.setParam("OutputFlag", 0)
+    model.setParam('OutputFlag', 0)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
     # run the optimization
@@ -54,10 +54,10 @@ def linear_program(f, A, b, C=None, d=None, **kwargs):
 
     # get active set
     if model.status == grb.GRB.Status.OPTIMAL:
-        sol["active_set"] = [
+        sol['active_set'] = [
             i
             for i in range(A.shape[0])
-            if model.getConstrByName("ineq_" + str(i)).getAttr("CBasis") == -1
+            if model.getConstrByName('ineq_' + str(i)).getAttr('CBasis') == -1
         ]
 
     return sol
@@ -107,9 +107,9 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
     model = _build_model(H=H, f=f, A=A, b=b, C=C, d=d)
 
     # parameters
-    model.setParam("OutputFlag", 0)
+    model.setParam('OutputFlag', 0)
     model.setParam(
-        "BarConvTol", 1.0e-10
+        'BarConvTol', 1.0e-10
     )  # with the default value (1e-8) inactive multipliers can get values such as 5e-4, setting this to 1e-10 they generally are lower than 2e-6 (note that in the following the active set is retrieved looking at the numeric values of the multipliers!)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
@@ -121,7 +121,7 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # compute active set
     if model.status == grb.GRB.Status.OPTIMAL:
-        sol["active_set"] = np.where(sol["multiplier_inequality"] > tol)[0].tolist()
+        sol['active_set'] = np.where(sol['multiplier_inequality'] > tol)[0].tolist()
 
     return sol
 
@@ -164,11 +164,11 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
     # initialize model
     model = _build_model(H=H, f=f, A=A, b=b, C=C, d=d)
     model.update()
-    [xi.setAttr("vtype", grb.GRB.BINARY) for xi in model.getVars()[nc:]]
+    [xi.setAttr('vtype', grb.GRB.BINARY) for xi in model.getVars()[nc:]]
     model.update()
 
     # parameters
-    model.setParam("OutputFlag", 0)
+    model.setParam('OutputFlag', 0)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
     # run the optimization
@@ -202,12 +202,12 @@ def _build_model(H=None, f=None, A=None, b=None, C=None, d=None):
 
     # linear inequalities
     for i, expr in enumerate(linear_expression(A, -b, x)):
-        model.addConstr(expr <= 0.0, name="ineq_" + str(i))
+        model.addConstr(expr <= 0.0, name='ineq_' + str(i))
 
     # linear equalities
     if C is not None and d is not None:
         for i, expr in enumerate(linear_expression(C, -d, x)):
-            model.addConstr(expr == 0.0, name="eq_" + str(i))
+            model.addConstr(expr == 0.0, name='eq_' + str(i))
 
     # cost function
     if H is not None:
@@ -246,31 +246,31 @@ def _reorganize_solution(model, A, C, continuous=True):
     """
 
     # intialize solution
-    sol = {"min": None, "argmin": None}
+    sol = {'min': None, 'argmin': None}
     if continuous:
-        sol["active_set"] = None
-        sol["multiplier_inequality"] = None
-        sol["multiplier_equality"] = None
+        sol['active_set'] = None
+        sol['multiplier_inequality'] = None
+        sol['multiplier_equality'] = None
 
     # if optimal solution found
     if model.status == grb.GRB.Status.OPTIMAL:
         # primal solution
         x = model.getVars()
-        sol["min"] = model.objVal
-        sol["argmin"] = np.array(model.getAttr("x"))
+        sol['min'] = model.objVal
+        sol['argmin'] = np.array(model.getAttr('x'))
 
         # dual solution
         if continuous:
-            sol["multiplier_inequality"] = np.array(
+            sol['multiplier_inequality'] = np.array(
                 [
-                    -model.getConstrByName("ineq_" + str(i)).getAttr("Pi")
+                    -model.getConstrByName('ineq_' + str(i)).getAttr('Pi')
                     for i in range(A.shape[0])
                 ]
             )
             if C is not None and C.shape[0] > 0:
-                sol["multiplier_equality"] = np.array(
+                sol['multiplier_equality'] = np.array(
                     [
-                        -model.getConstrByName("eq_" + str(i)).getAttr("Pi")
+                        -model.getConstrByName('eq_' + str(i)).getAttr('Pi')
                         for i in range(C.shape[0])
                     ]
                 )

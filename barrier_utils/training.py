@@ -46,7 +46,7 @@ def criterion(pred_traj, label_traj):
     step = pred_traj.size(1)
     label_step = label_traj.size(1)
     if step > label_step:
-        warnings.warn("prediction step mismatch")
+        warnings.warn('prediction step mismatch')
 
     slice_step = min(step, label_step)
 
@@ -69,11 +69,11 @@ def torch_train_nn(
         cycle = 1
         update_rate = 1
     else:
-        lr_base = clr["lr_base"]
-        lr_max = clr["lr_max"]
-        step_size = clr["step_size"]
-        cycle = clr["cycle"]
-        update_rate = clr["update_rate"]
+        lr_base = clr['lr_base']
+        lr_max = clr['lr_max']
+        step_size = clr['step_size']
+        cycle = clr['cycle']
+        update_rate = clr['update_rate']
         optimizer = optim.Adam(nn_model.parameters(), lr=lr_max)
         lr_scheduler = lambda t: np.interp(
             [t], [0, step_size, cycle], [lr_base, lr_max, lr_base]
@@ -128,13 +128,13 @@ def torch_train_nn(
             cycle_loss += loss_1.item()
 
             if i % 100 == 99:  # print every 2000 mini-batches
-                print("[%d, %5d] loss: %.6f" % (epoch + 1, i + 1, running_loss / 100))
+                print('[%d, %5d] loss: %.6f' % (epoch + 1, i + 1, running_loss / 100))
                 running_loss = 0.0
 
         if (epoch + 1) % update_rate == 0:
             lr_test[cycle_count] = cycle_loss / update_rate / len(dataloader)
             print(
-                "\n [%d, %.4f] cycle loss: %.6f"
+                '\n [%d, %.4f] cycle loss: %.6f'
                 % (cycle_count, lr, lr_test[cycle_count])
             )
 
@@ -142,10 +142,10 @@ def torch_train_nn(
             cycle_loss = 0.0
 
         # scheduler.step()
-    pickle_file(lr_test, "lr_test_temp")
+    pickle_file(lr_test, 'lr_test_temp')
 
-    print("finished training")
-    save_torch_nn_model(nn_model, "torch_nn_model_dict_temp")
+    print('finished training')
+    save_torch_nn_model(nn_model, 'torch_nn_model_dict_temp')
     return nn_model
 
 
@@ -158,7 +158,7 @@ def train_nn_and_save(
     lr=1e-4,
     decay_rate=1.0,
     clr=None,
-    path="torch_nn_model_temp",
+    path='torch_nn_model_temp',
 ):
     nn_model = torch_train_nn(
         nn_structure,
@@ -286,9 +286,9 @@ def train_approximator(
 
         if verbose:
             print(
-                f"epoch {epoch} training loss "
-                + f"{running_loss / len(train_loader)},"
-                + f" test loss {test_loss}"
+                f'epoch {epoch} training loss '
+                + f'{running_loss / len(train_loader)},'
+                + f' test loss {test_loss}'
             )
 
 
@@ -332,13 +332,13 @@ def save_second_order_forward_model(
     linear_layer_width, negative_slope, bias = extract_relu_structure(forward_relu)
     torch.save(
         {
-            "linear_layer_width": linear_layer_width,
-            "state_dict": forward_relu.state_dict(),
-            "negative_slope": negative_slope,
-            "bias": bias,
-            "q_equilibrium": q_equilibrium,
-            "u_equilibrium": u_equilibrium,
-            "dt": dt,
+            'linear_layer_width': linear_layer_width,
+            'state_dict': forward_relu.state_dict(),
+            'negative_slope': negative_slope,
+            'bias': bias,
+            'q_equilibrium': q_equilibrium,
+            'u_equilibrium': u_equilibrium,
+            'dt': dt,
         },
         file_path,
     )
@@ -375,7 +375,7 @@ def extract_relu_structure(relu_network):
             else:
                 assert negative_slope == layer.negative_slope
         else:
-            raise Exception("extract_relu_structure(): unknown layer.")
+            raise Exception('extract_relu_structure(): unknown layer.')
     return tuple(linear_layer_width), negative_slope, bias
 
 

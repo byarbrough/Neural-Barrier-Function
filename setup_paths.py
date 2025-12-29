@@ -10,9 +10,9 @@ import sys
 import os
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-_ABCROWN_ROOT = os.path.join(_PROJECT_ROOT, "alpha-beta-CROWN")
-_ABCROWN_VERIFIER = os.path.join(_ABCROWN_ROOT, "complete_verifier")
-_AUTO_LIRPA = os.path.join(_ABCROWN_ROOT, "auto_LiRPA")
+_ABCROWN_ROOT = os.path.join(_PROJECT_ROOT, 'alpha-beta-CROWN')
+_ABCROWN_VERIFIER = os.path.join(_ABCROWN_ROOT, 'complete_verifier')
+_AUTO_LIRPA = os.path.join(_ABCROWN_ROOT, 'auto_LiRPA')
 
 # Add project root first (at end of list, lower priority)
 if _PROJECT_ROOT not in sys.path:

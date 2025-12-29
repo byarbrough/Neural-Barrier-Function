@@ -18,21 +18,21 @@ def train_autonomous_nn_dynamics(
 
     if load_data_path is None:
         x_samples, xn_samples = generate_training_data(ref_dynamics, domain, 50000)
-        pickle.dump({"x": x_samples, "xn": xn_samples}, open(dataset_path, "wb"))
+        pickle.dump({'x': x_samples, 'xn': xn_samples}, open(dataset_path, 'wb'))
 
-        dataset = pickle.load(open(dataset_path, "rb"))
+        dataset = pickle.load(open(dataset_path, 'rb'))
     else:
-        dataset = pickle.load(open(load_data_path, "rb"))
+        dataset = pickle.load(open(load_data_path, 'rb'))
 
-    x_samples, xn_samples = dataset["x"], dataset["xn"]
+    x_samples, xn_samples = dataset['x'], dataset['xn']
     nn_model.train()
     opt = torch.optim.Adam(nn_model.parameters())
 
     for j in range(100000):
         x_batch, xn_batch = sample_batch(x_samples, xn_samples, batchsize=500)
         x_batch, xn_batch = (
-            torch.from_numpy(x_batch.astype("float32")).to(device),
-            torch.from_numpy(xn_batch.astype("float32")).to(device),
+            torch.from_numpy(x_batch.astype('float32')).to(device),
+            torch.from_numpy(xn_batch.astype('float32')).to(device),
         )
 
         opt.zero_grad()
@@ -43,7 +43,7 @@ def train_autonomous_nn_dynamics(
         opt.step()
 
         if j % 100 == 99:
-            print(f"iter {j} loss: {loss.item():.8f}")
+            print(f'iter {j} loss: {loss.item():.8f}')
 
     torch.save(nn_model.state_dict(), save_path)
 
@@ -67,16 +67,16 @@ def train_nn_barrier_function(
         xu_samples = Xu.sample(10000)
 
         pickle.dump(
-            {"x": x_samples, "xn": xn_samples, "x0": x0_samples, "xu": xu_samples},
-            open(train_data_path, "wb"),
+            {'x': x_samples, 'xn': xn_samples, 'x0': x0_samples, 'xu': xu_samples},
+            open(train_data_path, 'wb'),
         )
 
-        dataset = pickle.load(open(train_data_path, "rb"))
+        dataset = pickle.load(open(train_data_path, 'rb'))
     else:
-        dataset = pickle.load(open(load_data_path, "rb"))
+        dataset = pickle.load(open(load_data_path, 'rb'))
 
-    x_samples, xn_samples = dataset["x"], dataset["xn"]
-    x0_samples, xu_samples = dataset["x0"], dataset["xu"]
+    x_samples, xn_samples = dataset['x'], dataset['xn']
+    x0_samples, xu_samples = dataset['x0'], dataset['xu']
 
     barrier_fcn.train()
     opt = torch.optim.Adam(barrier_fcn.parameters())
@@ -87,13 +87,13 @@ def train_nn_barrier_function(
         x0_batch, xu_batch = sample_batch(x0_samples, xu_samples, batchsize=500)
 
         x_batch, xn_batch = (
-            torch.from_numpy(x_batch.astype("float32")).to(device),
-            torch.from_numpy(xn_batch.astype("float32")).to(device),
+            torch.from_numpy(x_batch.astype('float32')).to(device),
+            torch.from_numpy(xn_batch.astype('float32')).to(device),
         )
 
         x0_batch, xu_batch = (
-            torch.from_numpy(x0_batch.astype("float32")).to(device),
-            torch.from_numpy(xu_batch.astype("float32")).to(device),
+            torch.from_numpy(x0_batch.astype('float32')).to(device),
+            torch.from_numpy(xu_batch.astype('float32')).to(device),
         )
 
         opt.zero_grad()
@@ -107,7 +107,7 @@ def train_nn_barrier_function(
         barrier_fcn.A.data = barrier_fcn.A.clamp(min=0.0)
 
         if j % 100 == 99:
-            print(f"iter {j} loss: {loss.item():.8f}")
+            print(f'iter {j} loss: {loss.item():.8f}')
 
         if j % 10000 == 9999:
             torch.save(barrier_fcn.state_dict(), save_model_path)

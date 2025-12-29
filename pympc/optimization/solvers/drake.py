@@ -44,7 +44,7 @@ def linear_program(f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError("missing C or d.")
+        raise ValueError('missing C or d.')
 
     # problem size
     n_ineq, n_x = A.shape
@@ -62,7 +62,7 @@ def linear_program(f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # solve
     solver = GurobiSolver()
-    prog.SetSolverOption(solver.solver_type(), "OutputFlag", 0)
+    prog.SetSolverOption(solver.solver_type(), 'OutputFlag', 0)
     [
         prog.SetSolverOption(solver.solver_type(), parameter, value)
         for parameter, value in kwargs.items()
@@ -71,28 +71,28 @@ def linear_program(f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # initialize output
     sol = {
-        "min": None,
-        "argmin": None,
-        "active_set": None,
-        "multiplier_inequality": None,
-        "multiplier_equality": None,
+        'min': None,
+        'argmin': None,
+        'active_set': None,
+        'multiplier_inequality': None,
+        'multiplier_equality': None,
     }
 
     if result == SolutionResult.kSolutionFound:
-        sol["argmin"] = prog.GetSolution(x)
-        sol["min"] = f.dot(sol["argmin"])
-        sol["active_set"] = np.where(A.dot(sol["argmin"]) - b > -tol)[0].tolist()
+        sol['argmin'] = prog.GetSolution(x)
+        sol['min'] = f.dot(sol['argmin'])
+        sol['active_set'] = np.where(A.dot(sol['argmin']) - b > -tol)[0].tolist()
 
         # retrieve multipliers through KKT conditions
-        M = A[sol["active_set"]].T
+        M = A[sol['active_set']].T
         if n_eq > 0:
             M = np.hstack((M, C.T))
         m = -np.linalg.pinv(M).dot(f)
-        sol["multiplier_inequality"] = np.zeros(n_ineq)
-        for i, j in enumerate(sol["active_set"]):
-            sol["multiplier_inequality"][j] = m[i]
+        sol['multiplier_inequality'] = np.zeros(n_ineq)
+        for i, j in enumerate(sol['active_set']):
+            sol['multiplier_inequality'][j] = m[i]
         if n_eq > 0:
-            sol["multiplier_equality"] = m[len(sol["active_set"]) :]
+            sol['multiplier_equality'] = m[len(sol['active_set']) :]
 
     return sol
 
@@ -139,7 +139,7 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError("missing C or d.")
+        raise ValueError('missing C or d.')
 
     # problem size
     n_ineq, n_x = A.shape
@@ -158,7 +158,7 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # solve
     solver = GurobiSolver()
-    prog.SetSolverOption(solver.solver_type(), "OutputFlag", 0)
+    prog.SetSolverOption(solver.solver_type(), 'OutputFlag', 0)
     [
         prog.SetSolverOption(solver.solver_type(), parameter, value)
         for parameter, value in kwargs.items()
@@ -167,34 +167,34 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
 
     # initialize output
     sol = {
-        "min": None,
-        "argmin": None,
-        "active_set": None,
-        "multiplier_inequality": None,
-        "multiplier_equality": None,
+        'min': None,
+        'argmin': None,
+        'active_set': None,
+        'multiplier_inequality': None,
+        'multiplier_equality': None,
     }
 
     if result == SolutionResult.kSolutionFound:
-        sol["argmin"] = prog.GetSolution(x)
-        sol["min"] = 0.5 * sol["argmin"].dot(H).dot(sol["argmin"]) + f.dot(
-            sol["argmin"]
+        sol['argmin'] = prog.GetSolution(x)
+        sol['min'] = 0.5 * sol['argmin'].dot(H).dot(sol['argmin']) + f.dot(
+            sol['argmin']
         )
-        sol["active_set"] = np.where(A.dot(sol["argmin"]) - b > -tol)[0].tolist()
+        sol['active_set'] = np.where(A.dot(sol['argmin']) - b > -tol)[0].tolist()
 
         # retrieve multipliers through KKT conditions
-        lhs = A[sol["active_set"]]
-        rhs = b[sol["active_set"]]
+        lhs = A[sol['active_set']]
+        rhs = b[sol['active_set']]
         if n_eq > 0:
             lhs = np.vstack((lhs, C))
             rhs = np.concatenate((rhs, d))
         H_inv = np.linalg.inv(H)
         M = lhs.dot(H_inv).dot(lhs.T)
         m = -np.linalg.inv(M).dot(lhs.dot(H_inv).dot(f) + rhs)
-        sol["multiplier_inequality"] = np.zeros(n_ineq)
-        for i, j in enumerate(sol["active_set"]):
-            sol["multiplier_inequality"][j] = m[i]
+        sol['multiplier_inequality'] = np.zeros(n_ineq)
+        for i, j in enumerate(sol['active_set']):
+            sol['multiplier_inequality'][j] = m[i]
         if n_eq > 0:
-            sol["multiplier_equality"] = m[len(sol["active_set"]) :]
+            sol['multiplier_equality'] = m[len(sol['active_set']) :]
 
     return sol
 
@@ -236,7 +236,7 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError("missing C or d.")
+        raise ValueError('missing C or d.')
 
     # problem size
     n_ineq, n_x = A.shape
@@ -254,7 +254,7 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
 
     # solve
     solver = GurobiSolver()
-    prog.SetSolverOption(solver.solver_type(), "OutputFlag", 0)
+    prog.SetSolverOption(solver.solver_type(), 'OutputFlag', 0)
     [
         prog.SetSolverOption(solver.solver_type(), parameter, value)
         for parameter, value in kwargs.items()
@@ -262,12 +262,12 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
     result = prog.Solve()
 
     # initialize output
-    sol = {"min": None, "argmin": None}
+    sol = {'min': None, 'argmin': None}
 
     if result == SolutionResult.kSolutionFound:
-        sol["argmin"] = prog.GetSolution(x)
-        sol["min"] = 0.5 * sol["argmin"].dot(H).dot(sol["argmin"]) + f.dot(
-            sol["argmin"]
+        sol['argmin'] = prog.GetSolution(x)
+        sol['min'] = 0.5 * sol['argmin'].dot(H).dot(sol['argmin']) + f.dot(
+            sol['argmin']
         )
 
     return sol

@@ -59,8 +59,8 @@ class Learner:
         try:
             sol = self.analytic_center(samples, options=options)
         except Exception:
-            warnings.warn("Solver failed when solving the analytic center problem. ")
-            sol = {"c": None, "status": "infeasible", "solver_time": 0.0}
+            warnings.warn('Solver failed when solving the analytic center problem. ')
+            sol = {'c': None, 'status': 'infeasible', 'solver_time': 0.0}
 
         return sol
 
@@ -93,15 +93,15 @@ class Learner:
         )
 
         # Lyapunov decrease condition
-        x_samples, xn_samples = samples["x"], samples["xn"]
-        x0_samples, xu_samples = samples["x0"], samples["xu"]
+        x_samples, xn_samples = samples['x'], samples['xn']
+        x0_samples, xu_samples = samples['x0'], samples['xu']
 
         if x_samples is not None:
             x_basis = B.evaluate_basis(
-                torch.from_numpy(x_samples.astype("float32")).to(self.device)
+                torch.from_numpy(x_samples.astype('float32')).to(self.device)
             )
             xn_basis = B.evaluate_basis(
-                torch.from_numpy(xn_samples.astype("float32")).to(self.device)
+                torch.from_numpy(xn_samples.astype('float32')).to(self.device)
             )
 
             x_basis, xn_basis = (
@@ -122,7 +122,7 @@ class Learner:
 
         if x0_samples is not None:
             x0_basis = B.evaluate_basis(
-                torch.from_numpy(x0_samples.astype("float32")).to(self.device)
+                torch.from_numpy(x0_samples.astype('float32')).to(self.device)
             )
             x0_basis = x0_basis.detach().cpu().numpy()
 
@@ -138,7 +138,7 @@ class Learner:
 
         if xu_samples is not None:
             xu_basis = B.evaluate_basis(
-                torch.from_numpy(xu_samples.astype("float32")).to(self.device)
+                torch.from_numpy(xu_samples.astype('float32')).to(self.device)
             )
             xu_basis = xu_basis.detach().cpu().numpy()
 
@@ -155,16 +155,16 @@ class Learner:
         prob = cp.Problem(cp.Minimize(obj), constr)
 
         # select a solver
-        solver_name = arguments.Config["alg_options"]["ACCPM"]["cvxpy_solver"]
+        solver_name = arguments.Config['alg_options']['ACCPM']['cvxpy_solver']
 
-        if solver_name == "ECOS":
+        if solver_name == 'ECOS':
             cvxpy_solver = cp.ECOS
-        elif solver_name == "SCS":
+        elif solver_name == 'SCS':
             cvxpy_solver = cp.SCS
-        elif solver_name == "MOSEK":
+        elif solver_name == 'MOSEK':
             cvxpy_solver = cp.MOSEK
         else:
-            raise ValueError(f"Solver {solver_name} is not supported.")
+            raise ValueError(f'Solver {solver_name} is not supported.')
 
         prob.solve(solver=cvxpy_solver, verbose=True)
 
@@ -173,13 +173,13 @@ class Learner:
 
         status = prob.status
         solver_time = prob.solver_stats.solve_time
-        sol = {"C": C_sol, "b": b_sol, "status": status, "solver_time": solver_time}
+        sol = {'C': C_sol, 'b': b_sol, 'status': status, 'solver_time': solver_time}
 
         return sol
 
 
 class Verifier:
-    def __init__(self, problem, method="bab", gurobi_model=None, yaml_file_path=None):
+    def __init__(self, problem, method='bab', gurobi_model=None, yaml_file_path=None):
         # method = 'bab' or 'mip'
         self.problem = problem
         self.method = method
@@ -202,34 +202,34 @@ class Verifier:
     def initialize_gurobi_base_model(self, gurobi_model):
         gp_model_init = gurobi_model.copy()
         gp_model_init = self.problem.X0.add_gurobi_constr(
-            gp_model_init, "x_0", mark="init_set_constr"
+            gp_model_init, 'x_0', mark='init_set_constr'
         )
         self.gurobi_base_model_init = gp_model_init
 
         gp_model_unsafe = gurobi_model.copy()
         gp_model_unsafe = self.problem.Xu.add_gurobi_constr(
-            gp_model_unsafe, "x_0", mark="unsafe_constr"
+            gp_model_unsafe, 'x_0', mark='unsafe_constr'
         )
         self.gurobi_base_model_unsafe = gp_model_unsafe
 
         gp_model_dec = gurobi_model.copy()
         gp_model_dec = self.problem.system.add_gurobi_constr(
-            gp_model_dec, "x_0", "x_1", mark="dynamics"
+            gp_model_dec, 'x_0', 'x_1', mark='dynamics'
         )
         gp_model_dec = self.problem.X.add_gurobi_constr(
-            gp_model_dec, "x_0", mark="state_space_constr"
+            gp_model_dec, 'x_0', mark='state_space_constr'
         )
         self.gurobi_base_model_dec = gp_model_dec
 
     def verify_candidate(self, C, b, timeout=1e5):
         method = self.method
-        if method == "bab":
+        if method == 'bab':
             yaml_file_path = self.yaml_file_path
             assert yaml_file_path is not None
             status, ce_dict, sol_record = self.verify_candidate_bab(
                 C, b, yaml_file_path, timeout=timeout
             )
-        elif method == "mip":
+        elif method == 'mip':
             status, ce_dict, sol_record = self.verify_candidate_mip(
                 C, b, timeout=timeout
             )
@@ -248,8 +248,8 @@ class Verifier:
         output_dim = B.n_out
 
         last_layer = nn.Linear(B.basis_fcn_dim, B.n_out).to(self.device)
-        last_layer.weight.data = torch.from_numpy(C.astype("float32")).to(self.device)
-        last_layer.bias.data = torch.from_numpy(b.astype("float32")).to(self.device)
+        last_layer.weight.data = torch.from_numpy(C.astype('float32')).to(self.device)
+        last_layer.bias.data = torch.from_numpy(b.astype('float32')).to(self.device)
 
         layers_to_verify = list(net)[:-1] + [last_layer]
         net_to_verify = nn.Sequential(*layers_to_verify).to(self.device)
@@ -261,7 +261,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "xu",
+            'xu',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -274,18 +274,18 @@ class Verifier:
             # remove repetitive samples
             ce_unsafe = filter_adversarial_samples(ce_unsafe, 0.001)
 
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
-            solver_status_unsafe = "unsafe"
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
+            solver_status_unsafe = 'unsafe'
         else:
             solver_status_unsafe, ce_unsafe, sol_unsafe = bab_barrier_fcn_verification(
-                self.problem, "xu", yaml_file_path, net=net_to_verify
+                self.problem, 'xu', yaml_file_path, net=net_to_verify
             )
             sol_record.append(sol_unsafe)
 
         timeout = timeout - (time.time() - start_time)
         if timeout < 0:
-            status = "time_out"
-            ce_dict = {"xu": ce_unsafe, "x0": None, "x": None, "xn": None}
+            status = 'time_out'
+            ce_dict = {'xu': ce_unsafe, 'x0': None, 'x': None, 'xn': None}
             return status, ce_dict, sol_record
 
         # initial region constraint
@@ -293,7 +293,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "x0",
+            'x0',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -305,18 +305,18 @@ class Verifier:
             ce_init = ce.detach().cpu().numpy()
             ce_init = filter_adversarial_samples(ce_init, 0.001)
 
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
-            solver_status_init = "unsafe"
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
+            solver_status_init = 'unsafe'
         else:
             solver_status_init, ce_init, sol_init = bab_barrier_fcn_verification(
-                self.problem, "x0", yaml_file_path, net=net_to_verify
+                self.problem, 'x0', yaml_file_path, net=net_to_verify
             )
             sol_record.append(sol_init)
 
         timeout = timeout - (time.time() - start_time)
         if timeout < 0:
-            status = "time_out"
-            ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": None, "xn": None}
+            status = 'time_out'
+            ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': None, 'xn': None}
             return status, ce_dict, sol_record
 
         # decrease constraint
@@ -324,7 +324,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "x",
+            'x',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -336,11 +336,11 @@ class Verifier:
             ce_dec_x = ce.detach().cpu().numpy()
             ce_dec_x = filter_adversarial_samples(ce_dec_x, 0.001)
 
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
-            solver_status_dec = "unsafe"
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
+            solver_status_dec = 'unsafe'
         else:
             solver_status_dec, ce_dec_x, sol_dec = bab_barrier_fcn_verification(
-                self.problem, "x", yaml_file_path, net=net_to_verify
+                self.problem, 'x', yaml_file_path, net=net_to_verify
             )
             sol_record.append(sol_dec)
 
@@ -356,20 +356,20 @@ class Verifier:
 
         timeout = timeout - (time.time() - start_time)
         if timeout < 0:
-            status = "time_out"
-            ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": ce_dec_x, "xn": ce_dec_xn}
+            status = 'time_out'
+            ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': ce_dec_x, 'xn': ce_dec_xn}
             return status, ce_dict, sol_record
 
-        ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": ce_dec_x, "xn": ce_dec_xn}
+        ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': ce_dec_x, 'xn': ce_dec_xn}
 
         if (
-            solver_status_unsafe in ["safe", "safe-incomplete"]
-            and solver_status_init in ["safe", "safe-incomplete"]
-            and solver_status_dec in ["safe", "safe-incomplete"]
+            solver_status_unsafe in ['safe', 'safe-incomplete']
+            and solver_status_init in ['safe', 'safe-incomplete']
+            and solver_status_dec in ['safe', 'safe-incomplete']
         ):
-            status = "feasible"
+            status = 'feasible'
         else:
-            status = "unknown"
+            status = 'unknown'
 
         return status, ce_dict, sol_record
 
@@ -382,8 +382,8 @@ class Verifier:
         output_dim = B.n_out
 
         last_layer = nn.Linear(B.basis_fcn_dim, B.n_out).to(self.device)
-        last_layer.weight.data = torch.from_numpy(C.astype("float32")).to(self.device)
-        last_layer.bias.data = torch.from_numpy(b.astype("float32")).to(self.device)
+        last_layer.weight.data = torch.from_numpy(C.astype('float32')).to(self.device)
+        last_layer.bias.data = torch.from_numpy(b.astype('float32')).to(self.device)
 
         layers_to_verify = list(net)[:-1] + [last_layer]
         net_to_verify = nn.Sequential(*layers_to_verify).to(self.device)
@@ -397,7 +397,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "xu",
+            'xu',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -409,13 +409,13 @@ class Verifier:
             ce_unsafe = ce.detach().cpu().numpy()
             ce_unsafe = filter_adversarial_samples(ce_unsafe, 0.001)
 
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
         else:
             gp_model_unsafe = self.gurobi_base_model_unsafe.copy()
             gp_model_unsafe = B.add_gurobi_constr(
                 gp_model_unsafe,
-                "x_0",
-                "B_0",
+                'x_0',
+                'B_0',
                 net=net_to_verify,
                 domain=self.problem.Xu.set,
             )
@@ -423,13 +423,13 @@ class Verifier:
             # extract relevant variables
             B_0 = list()
             for i in range(B.n_out):
-                B_0.append(gp_model_unsafe.getVarByName("B_0[" + str(i) + "]"))
+                B_0.append(gp_model_unsafe.getVarByName('B_0[' + str(i) + ']'))
 
             obj = B_0[B.unsafe_index]
 
-            tol_unsafe = arguments.Config["alg_options"]["barrier_fcn"][
-                "train_options"
-            ]["condition_tol"]
+            tol_unsafe = arguments.Config['alg_options']['barrier_fcn'][
+                'train_options'
+            ]['condition_tol']
             gp_model_unsafe.Params.BestObjStop = tol_unsafe + 1e-8
             gp_model_unsafe.Params.BestBdStop = tol_unsafe - 1e-8
 
@@ -437,19 +437,19 @@ class Verifier:
             gp_model_unsafe.optimize()
 
             status_unsafe, ce_unsafe, sol_unsafe = gurobi_results_processing(
-                gp_model_unsafe, "x_0", x_dim, mode="min", tol=tol_unsafe
+                gp_model_unsafe, 'x_0', x_dim, mode='min', tol=tol_unsafe
             )
             sol_record.append(sol_unsafe)
 
-            if status_unsafe == "verifier_failure":
-                status = "verifier_failure"
-                ce_dict = {"xu": ce_unsafe, "x0": None, "x": None, "xn": None}
+            if status_unsafe == 'verifier_failure':
+                status = 'verifier_failure'
+                ce_dict = {'xu': ce_unsafe, 'x0': None, 'x': None, 'xn': None}
                 return status, ce_dict, sol_record
 
         timeout = timeout - (time.time() - start_time)
         if timeout < 0:
-            status = "time_out"
-            ce_dict = {"xu": ce_unsafe, "x0": None, "x": None, "xn": None}
+            status = 'time_out'
+            ce_dict = {'xu': ce_unsafe, 'x0': None, 'x': None, 'xn': None}
             return status, ce_dict, sol_record
 
         # initial set constraint
@@ -457,7 +457,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "x0",
+            'x0',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -469,26 +469,26 @@ class Verifier:
             ce_init = ce.detach().cpu().numpy()
             ce_init = filter_adversarial_samples(ce_init, 0.001)
 
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
 
             timeout = timeout - (time.time() - start_time)
             if timeout < 0:
-                status = "time_out"
-                ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": None, "xn": None}
+                status = 'time_out'
+                ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': None, 'xn': None}
                 return status, ce_dict, sol_record
 
         else:
             gp_model_init = self.gurobi_base_model_init.copy()
             gp_model_init = B.add_gurobi_constr(
                 gp_model_init,
-                "x_0",
-                "B_0",
+                'x_0',
+                'B_0',
                 net=net_to_verify,
                 domain=self.problem.X0.set,
             )
 
-            tol_init = -arguments.Config["alg_options"]["barrier_fcn"]["train_options"][
-                "condition_tol"
+            tol_init = -arguments.Config['alg_options']['barrier_fcn']['train_options'][
+                'condition_tol'
             ]
             gp_model_init.Params.BestObjStop = tol_init - 1e-8
             gp_model_init.Params.BestBdStop = tol_init + 1e-8
@@ -496,7 +496,7 @@ class Verifier:
             # extract relevant variables
             B_0 = list()
             for i in range(B.n_out):
-                B_0.append(gp_model_init.getVarByName("B_0[" + str(i) + "]"))
+                B_0.append(gp_model_init.getVarByName('B_0[' + str(i) + ']'))
 
             ce_init = None
             for i in range(output_dim):
@@ -508,7 +508,7 @@ class Verifier:
                 gp_model_init.optimize()
 
                 status_init, ce_0, sol_init = gurobi_results_processing(
-                    gp_model_init, "x_0", x_dim, mode="max", tol=tol_init
+                    gp_model_init, 'x_0', x_dim, mode='max', tol=tol_init
                 )
                 sol_record.append(sol_init)
 
@@ -518,15 +518,15 @@ class Verifier:
                     else:
                         ce_init = np.concatenate((ce_init, ce_0), axis=0)
 
-                if status_init == "verifier_failure":
-                    status = "verifier_failure"
-                    ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": None, "xn": None}
+                if status_init == 'verifier_failure':
+                    status = 'verifier_failure'
+                    ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': None, 'xn': None}
                     return status, ce_dict, sol_record
 
                 timeout = timeout - (time.time() - start_time)
                 if timeout < 0:
-                    status = "time_out"
-                    ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": None, "xn": None}
+                    status = 'time_out'
+                    ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': None, 'xn': None}
                     return status, ce_dict, sol_record
 
         # decrease constraint
@@ -534,7 +534,7 @@ class Verifier:
         start_time = time.time()
         ce, sol, output_val = search_counterexamples(
             self.problem,
-            "x",
+            'x',
             net=net_to_verify,
             samples=None,
             num_iter=300,
@@ -551,16 +551,16 @@ class Verifier:
                 .cpu()
                 .numpy()
             )
-            sol_record.append({"solver_time": runtime, "method": "pgd"})
+            sol_record.append({'solver_time': runtime, 'method': 'pgd'})
 
             timeout = timeout - (time.time() - start_time)
             if timeout < 0:
-                status = "time_out"
+                status = 'time_out'
                 ce_dict = {
-                    "xu": ce_unsafe,
-                    "x0": ce_init,
-                    "x": ce_dec_x,
-                    "xn": ce_dec_xn,
+                    'xu': ce_unsafe,
+                    'x0': ce_init,
+                    'x': ce_dec_x,
+                    'xn': ce_dec_xn,
                 }
                 return status, ce_dict, sol_record
 
@@ -569,46 +569,46 @@ class Verifier:
 
             gp_model_dec = B.add_gurobi_constr(
                 gp_model_dec,
-                "x_0",
-                "B_0",
+                'x_0',
+                'B_0',
                 net=net_to_verify,
                 domain=self.problem.X.set,
-                mark="B_0",
+                mark='B_0',
             )
 
             if self.problem.system.output_domain is not None:
                 gp_model_dec = B.add_gurobi_constr(
                     gp_model_dec,
-                    "x_1",
-                    "B_1",
+                    'x_1',
+                    'B_1',
                     net=net_to_verify,
                     domain=self.problem.system.output_domain,
-                    mark="B_1",
+                    mark='B_1',
                 )
             else:
                 output_domain = scale_polyhedron(self.problem.X.set, 1.5)
                 gp_model_dec = B.add_gurobi_constr(
                     gp_model_dec,
-                    "x_1",
-                    "B_1",
+                    'x_1',
+                    'B_1',
                     net=net_to_verify,
                     domain=output_domain,
-                    mark="B_1",
+                    mark='B_1',
                 )
 
-            tol_dec = arguments.Config["alg_options"]["barrier_fcn"]["train_options"][
-                "condition_tol"
+            tol_dec = arguments.Config['alg_options']['barrier_fcn']['train_options'][
+                'condition_tol'
             ]
             gp_model_dec.Params.BestObjStop = tol_dec + 1e-8
             gp_model_dec.Params.BestBdStop = tol_dec - 1e-8
             # extract relevant variables
             B_0 = list()
             for i in range(B.n_out):
-                B_0.append(gp_model_dec.getVarByName("B_0[" + str(i) + "]"))
+                B_0.append(gp_model_dec.getVarByName('B_0[' + str(i) + ']'))
 
             B_1 = list()
             for i in range(B.n_out):
-                B_1.append(gp_model_dec.getVarByName("B_1[" + str(i) + "]"))
+                B_1.append(gp_model_dec.getVarByName('B_1[' + str(i) + ']'))
 
             ce_dec = None
             for i in range(output_dim):
@@ -620,7 +620,7 @@ class Verifier:
                 gp_model_dec.optimize()
 
                 status_dec, ce_dec_i, sol_dec = gurobi_results_processing(
-                    gp_model_dec, "x_0", x_dim, mode="min", tol=tol_dec
+                    gp_model_dec, 'x_0', x_dim, mode='min', tol=tol_dec
                 )
                 sol_record.append(sol_dec)
 
@@ -630,8 +630,8 @@ class Verifier:
                     else:
                         ce_dec = np.concatenate((ce_dec, ce_dec_i), axis=0)
 
-                if status_dec == "verifier_failure":
-                    status = "verifier_failure"
+                if status_dec == 'verifier_failure':
+                    status = 'verifier_failure'
                     if ce_dec is None:
                         ce_dec_xn = None
                     else:
@@ -644,17 +644,17 @@ class Verifier:
                             .numpy()
                         )
                     ce_dict = {
-                        "xu": ce_unsafe,
-                        "x0": ce_init,
-                        "x": ce_dec,
-                        "xn": ce_dec_xn,
+                        'xu': ce_unsafe,
+                        'x0': ce_init,
+                        'x': ce_dec,
+                        'xn': ce_dec_xn,
                     }
 
                     return status, ce_dict, sol_record
 
                 timeout = timeout - (time.time() - start_time)
                 if timeout < 0:
-                    status = "time_out"
+                    status = 'time_out'
                     if ce_dec is None:
                         ce_dec_xn = None
                     else:
@@ -667,10 +667,10 @@ class Verifier:
                             .numpy()
                         )
                     ce_dict = {
-                        "xu": ce_unsafe,
-                        "x0": ce_init,
-                        "x": ce_dec,
-                        "xn": ce_dec_xn,
+                        'xu': ce_unsafe,
+                        'x0': ce_init,
+                        'x': ce_dec,
+                        'xn': ce_dec_xn,
                     }
                     return status, ce_dict, sol_record
 
@@ -687,13 +687,13 @@ class Verifier:
                     .numpy()
                 )
 
-        ce_dict = {"xu": ce_unsafe, "x0": ce_init, "x": ce_dec_x, "xn": ce_dec_xn}
+        ce_dict = {'xu': ce_unsafe, 'x0': ce_init, 'x': ce_dec_x, 'xn': ce_dec_xn}
 
         if (ce_unsafe is None) and (ce_init is None) and (ce_dec_x is None):
             # the candidate barrier function is verified
-            status = "feasible"
+            status = 'feasible'
         else:
-            status = "unknown"
+            status = 'unknown'
 
         return status, ce_dict, sol_record
 
@@ -702,7 +702,7 @@ class ACCPM_Alg:
     def __init__(
         self,
         problem,
-        method="bab",
+        method='bab',
         result_path=None,
         mip_solver_options=None,
         bab_yaml_path=None,
@@ -718,22 +718,22 @@ class ACCPM_Alg:
 
         self.bab_yaml_path = bab_yaml_path
 
-        self.result = "unknown"
+        self.result = 'unknown'
         self.num_iter = None
 
-        self.sample_set = {"x": None, "xn": None, "x0": None, "xu": None}
+        self.sample_set = {'x': None, 'xn': None, 'x0': None, 'xu': None}
 
         # save the counterexamples for the initial barrier function candidate
         self.init_ce = None
 
-        if self.method == "mip":
+        if self.method == 'mip':
             self.gurobi_model = None
             self.init_gurobi_model()
 
         self.learner_sol_record = []
         self.verifier_sol_record = []
 
-        self.barrier_coeff = {"C": None, "b": None}
+        self.barrier_coeff = {'C': None, 'b': None}
         self.barrier_coeff_record = []
 
         C_candidate = problem.barrier_fcn.net[-1].weight.data.detach().cpu().numpy()
@@ -741,11 +741,11 @@ class ACCPM_Alg:
         self.M = 2.0 * np.maximum(np.abs(C_candidate).max(), np.abs(b_candidate).max())
 
         self.learner = Learner(problem, M=self.M)
-        if self.method == "bab":
+        if self.method == 'bab':
             self.verifier = Verifier(
                 problem, method=self.method, yaml_file_path=self.bab_yaml_path
             )
-        elif self.method == "mip":
+        elif self.method == 'mip':
             self.verifier = Verifier(
                 problem,
                 method=self.method,
@@ -753,22 +753,22 @@ class ACCPM_Alg:
                 yaml_file_path=self.bab_yaml_path,
             )
         else:
-            raise ValueError(f"Method {self.method} is not supported.")
+            raise ValueError(f'Method {self.method} is not supported.')
 
     def clear_sample_set(self):
         self.sample_set = None
 
     def reset(self):
-        self.result = "unknown"
+        self.result = 'unknown'
         self.num_iter = None
 
-        self.sample_set = {"x": None, "xn": None, "x0": None, "xu": None}
+        self.sample_set = {'x': None, 'xn': None, 'x0': None, 'xu': None}
         self.init_ce = None
 
         self.learner_sol_record = []
         self.verifier_sol_record = []
 
-        self.barrier_coeff = {"C": None, "b": None}
+        self.barrier_coeff = {'C': None, 'b': None}
         self.barrier_coeff_record = []
 
     def init_gurobi_model(self):
@@ -791,8 +791,8 @@ class ACCPM_Alg:
 
         # self.M = 2.0*np.maximum(np.abs(C_candidate).max(), np.abs(b_candidate).max())
 
-        self.barrier_coeff = {"C": C_candidate, "b": b_candidate}
-        self.barrier_coeff_record.append({"C": C_candidate, "b": b_candidate})
+        self.barrier_coeff = {'C': C_candidate, 'b': b_candidate}
+        self.barrier_coeff_record.append({'C': C_candidate, 'b': b_candidate})
 
         verifier = self.verifier
         # verifier_status could be: 'feasible', 'unknown', 'time_out', 'verifier_failure'
@@ -802,42 +802,42 @@ class ACCPM_Alg:
 
         self.verifier_sol_record.append(sol_record)
 
-        if verifier_status == "feasible":
+        if verifier_status == 'feasible':
             return verifier_status, ce_set, sol_record
 
         # add counterexample to the sample set
         ce_unsafe, ce_init, ce_x, ce_xn = (
-            ce_set["xu"],
-            ce_set["x0"],
-            ce_set["x"],
-            ce_set["xn"],
+            ce_set['xu'],
+            ce_set['x0'],
+            ce_set['x'],
+            ce_set['xn'],
         )
 
         if ce_x is not None:
-            if self.sample_set["x"] is None:
-                self.sample_set["x"] = ce_x
-                self.sample_set["xn"] = ce_xn
+            if self.sample_set['x'] is None:
+                self.sample_set['x'] = ce_x
+                self.sample_set['xn'] = ce_xn
             else:
-                self.sample_set["x"] = np.vstack((self.sample_set["x"], ce_x))
-                self.sample_set["xn"] = np.vstack((self.sample_set["xn"], ce_xn))
+                self.sample_set['x'] = np.vstack((self.sample_set['x'], ce_x))
+                self.sample_set['xn'] = np.vstack((self.sample_set['xn'], ce_xn))
 
         if ce_unsafe is not None:
-            if self.sample_set["xu"] is None:
-                self.sample_set["xu"] = ce_unsafe
+            if self.sample_set['xu'] is None:
+                self.sample_set['xu'] = ce_unsafe
             else:
-                self.sample_set["xu"] = np.vstack((self.sample_set["xu"], ce_unsafe))
+                self.sample_set['xu'] = np.vstack((self.sample_set['xu'], ce_unsafe))
 
         if ce_init is not None:
-            if self.sample_set["x0"] is None:
-                self.sample_set["x0"] = ce_init
+            if self.sample_set['x0'] is None:
+                self.sample_set['x0'] = ce_init
             else:
-                self.sample_set["x0"] = np.vstack((self.sample_set["x0"], ce_init))
+                self.sample_set['x0'] = np.vstack((self.sample_set['x0'], ce_init))
 
         return verifier_status, ce_set, sol_record
 
     def ACCPM_iter(self, sample_ce=None, timeout=1e5):
         problem = self.problem
-        alg_status = "unknown"
+        alg_status = 'unknown'
 
         learner = self.learner
         sample_set = self.sample_set
@@ -847,17 +847,17 @@ class ACCPM_Alg:
         self.learner_sol_record.append(learner_sol)
         timeout = timeout - (time.time() - start_time)
 
-        if learner_sol["status"] in ["infeasible", "unbounded"]:
-            alg_status = "infeasible"
+        if learner_sol['status'] in ['infeasible', 'unbounded']:
+            alg_status = 'infeasible'
             return alg_status, None
 
         if timeout < 0:
-            alg_status = "time_out"
+            alg_status = 'time_out'
             return alg_status, None
 
-        C_candidate, b_candidate = learner_sol["C"], learner_sol["b"]
-        self.barrier_coeff = {"C": C_candidate, "b": b_candidate}
-        self.barrier_coeff_record.append({"C": C_candidate, "b": b_candidate})
+        C_candidate, b_candidate = learner_sol['C'], learner_sol['b']
+        self.barrier_coeff = {'C': C_candidate, 'b': b_candidate}
+        self.barrier_coeff_record.append({'C': C_candidate, 'b': b_candidate})
 
         verifier = self.verifier
         verifier_status, ce_set, sol_record = verifier.verify_candidate(
@@ -866,12 +866,12 @@ class ACCPM_Alg:
 
         self.verifier_sol_record.append(sol_record)
 
-        if verifier_status == "feasible":
-            alg_status = "feasible"
+        if verifier_status == 'feasible':
+            alg_status = 'feasible'
             return alg_status, ce_set
 
         # add counterexample to the sample set
-        if self.method == "mip":
+        if self.method == 'mip':
             ori_ce_set = ce_set
             if sample_ce is not None:
                 num_ce_samples = sample_ce.num_ce_samples_accpm
@@ -885,21 +885,21 @@ class ACCPM_Alg:
                     opt_iter=opt_iter,
                 )
                 ce_unsafe, ce_init, ce_x, ce_xn = (
-                    new_ce_set["xu"],
-                    new_ce_set["x0"],
-                    new_ce_set["x"],
-                    new_ce_set["xn"],
+                    new_ce_set['xu'],
+                    new_ce_set['x0'],
+                    new_ce_set['x'],
+                    new_ce_set['xn'],
                 )
             else:
                 ce_unsafe, ce_init, ce_x, ce_xn = (
-                    ce_set["xu"],
-                    ce_set["x0"],
-                    ce_set["x"],
-                    ce_set["xn"],
+                    ce_set['xu'],
+                    ce_set['x0'],
+                    ce_set['x'],
+                    ce_set['xn'],
                 )
 
-            accpm_num_ce_thresh = arguments.Config["alg_options"]["ACCPM"][
-                "num_ce_thresh"
+            accpm_num_ce_thresh = arguments.Config['alg_options']['ACCPM'][
+                'num_ce_thresh'
             ]
 
             # no need to filter out close examples since the counterexamples generated by mip are already scarce
@@ -923,24 +923,24 @@ class ACCPM_Alg:
                     .numpy()
                 )
 
-            ce_set["x0"], ce_set["xu"], ce_set["x"], ce_set["xn"] = (
+            ce_set['x0'], ce_set['xu'], ce_set['x'], ce_set['xn'] = (
                 ce_init,
                 ce_unsafe,
                 ce_x,
                 ce_xn,
             )
 
-        elif self.method == "bab":
+        elif self.method == 'bab':
             # remove close examples
             ce_unsafe, ce_init, ce_x, ce_xn = (
-                ce_set["xu"],
-                ce_set["x0"],
-                ce_set["x"],
-                ce_set["xn"],
+                ce_set['xu'],
+                ce_set['x0'],
+                ce_set['x'],
+                ce_set['xn'],
             )
 
-            accpm_num_ce_thresh = arguments.Config["alg_options"]["ACCPM"][
-                "num_ce_thresh"
+            accpm_num_ce_thresh = arguments.Config['alg_options']['ACCPM'][
+                'num_ce_thresh'
             ]
 
             ce_unsafe = filter_adversarial_samples(ce_unsafe, 0.01)
@@ -963,7 +963,7 @@ class ACCPM_Alg:
                     .numpy()
                 )
 
-            ce_set["x0"], ce_set["xu"], ce_set["x"], ce_set["xn"] = (
+            ce_set['x0'], ce_set['xu'], ce_set['x'], ce_set['xn'] = (
                 ce_init,
                 ce_unsafe,
                 ce_x,
@@ -971,37 +971,37 @@ class ACCPM_Alg:
             )
         else:
             ce_unsafe, ce_init, ce_x, ce_xn = (
-                ce_set["xu"],
-                ce_set["x0"],
-                ce_set["x"],
-                ce_set["xn"],
+                ce_set['xu'],
+                ce_set['x0'],
+                ce_set['x'],
+                ce_set['xn'],
             )
 
         if ce_x is not None:
-            if self.sample_set["x"] is None:
-                self.sample_set["x"] = ce_x
-                self.sample_set["xn"] = ce_xn
+            if self.sample_set['x'] is None:
+                self.sample_set['x'] = ce_x
+                self.sample_set['xn'] = ce_xn
             else:
-                self.sample_set["x"] = np.vstack((self.sample_set["x"], ce_x))
-                self.sample_set["xn"] = np.vstack((self.sample_set["xn"], ce_xn))
+                self.sample_set['x'] = np.vstack((self.sample_set['x'], ce_x))
+                self.sample_set['xn'] = np.vstack((self.sample_set['xn'], ce_xn))
 
         if ce_unsafe is not None:
-            if self.sample_set["xu"] is None:
-                self.sample_set["xu"] = ce_unsafe
+            if self.sample_set['xu'] is None:
+                self.sample_set['xu'] = ce_unsafe
             else:
-                self.sample_set["xu"] = np.vstack((self.sample_set["xu"], ce_unsafe))
+                self.sample_set['xu'] = np.vstack((self.sample_set['xu'], ce_unsafe))
 
         if ce_init is not None:
-            if self.sample_set["x0"] is None:
-                self.sample_set["x0"] = ce_init
+            if self.sample_set['x0'] is None:
+                self.sample_set['x0'] = ce_init
             else:
-                self.sample_set["x0"] = np.vstack((self.sample_set["x0"], ce_init))
+                self.sample_set['x0'] = np.vstack((self.sample_set['x0'], ce_init))
 
-        if verifier_status == "verifier_failure":
-            alg_status = "verifier_failure"
+        if verifier_status == 'verifier_failure':
+            alg_status = 'verifier_failure'
 
-        if verifier_status == "time_out":
-            alg_status = "time_out"
+        if verifier_status == 'time_out':
+            alg_status = 'time_out'
 
         return alg_status, ce_set
 
@@ -1015,26 +1015,26 @@ class ACCPM_Alg:
 
         self.init_ce = ce_set
 
-        if alg_status in ["feasible", "time_out"]:
+        if alg_status in ['feasible', 'time_out']:
             self.result = alg_status
             results = {
-                "status": self.result,
-                "problem": self.problem,
-                "learner_record": self.learner_sol_record,
-                "verifier_record": self.verifier_sol_record,
-                "barrier_coeff_record": self.barrier_coeff_record,
-                "num_iter": self.num_iter,
-                "output_coeff": self.barrier_coeff,
-                "sample_set": self.sample_set,
-                "last_ce_set": ce_set,
-                "init_ce_set": self.init_ce,
+                'status': self.result,
+                'problem': self.problem,
+                'learner_record': self.learner_sol_record,
+                'verifier_record': self.verifier_sol_record,
+                'barrier_coeff_record': self.barrier_coeff_record,
+                'num_iter': self.num_iter,
+                'output_coeff': self.barrier_coeff,
+                'sample_set': self.sample_set,
+                'last_ce_set': ce_set,
+                'init_ce_set': self.init_ce,
             }
             self.save_data(self.result_path)
 
             return alg_status, 1, results
 
         # execute the ACCPM
-        alg_status = "unknown"
+        alg_status = 'unknown'
         if alg_opt is None:
             max_iter = 30
             sample_ce_opt = None
@@ -1050,32 +1050,32 @@ class ACCPM_Alg:
             )
             timeout = timeout - (time.time() - start_time)
 
-            if iter_status != "infeasible":
+            if iter_status != 'infeasible':
                 count += 1
 
             self.num_iter = count
 
             if iter_status in [
-                "infeasible",
-                "feasible",
-                "verifier_failure",
-                "time_out",
+                'infeasible',
+                'feasible',
+                'verifier_failure',
+                'time_out',
             ]:
                 alg_status = iter_status
                 self.result = alg_status
                 self.save_data(self.result_path)
 
                 results = {
-                    "status": self.result,
-                    "problem": self.problem,
-                    "learner_record": self.learner_sol_record,
-                    "verifier_record": self.verifier_sol_record,
-                    "barrier_coeff_record": self.barrier_coeff_record,
-                    "num_iter": self.num_iter,
-                    "output_coeff": self.barrier_coeff,
-                    "sample_set": self.sample_set,
-                    "last_ce_set": ce_set,
-                    "init_ce_set": self.init_ce,
+                    'status': self.result,
+                    'problem': self.problem,
+                    'learner_record': self.learner_sol_record,
+                    'verifier_record': self.verifier_sol_record,
+                    'barrier_coeff_record': self.barrier_coeff_record,
+                    'num_iter': self.num_iter,
+                    'output_coeff': self.barrier_coeff,
+                    'sample_set': self.sample_set,
+                    'last_ce_set': ce_set,
+                    'init_ce_set': self.init_ce,
                 }
 
                 return alg_status, count, results
@@ -1083,16 +1083,16 @@ class ACCPM_Alg:
         self.result = alg_status
 
         results = {
-            "status": self.result,
-            "problem": self.problem,
-            "learner_record": self.learner_sol_record,
-            "verifier_record": self.verifier_sol_record,
-            "barrier_coeff_record": self.barrier_coeff_record,
-            "num_iter": self.num_iter,
-            "output_coeff": self.barrier_coeff,
-            "sample_set": self.sample_set,
-            "last_ce_set": ce_set,
-            "init_ce_set": self.init_ce,
+            'status': self.result,
+            'problem': self.problem,
+            'learner_record': self.learner_sol_record,
+            'verifier_record': self.verifier_sol_record,
+            'barrier_coeff_record': self.barrier_coeff_record,
+            'num_iter': self.num_iter,
+            'output_coeff': self.barrier_coeff,
+            'sample_set': self.sample_set,
+            'last_ce_set': ce_set,
+            'init_ce_set': self.init_ce,
         }
 
         self.save_data(self.result_path)
@@ -1102,20 +1102,20 @@ class ACCPM_Alg:
     def save_data(self, path):
         if path is not None:
             data_to_save = {
-                "status": self.result,
-                "problem": self.problem,
-                "learner_record": self.learner_sol_record,
-                "verifier_record": self.verifier_sol_record,
-                "barrier_coeff_record": self.barrier_coeff_record,
-                "num_iter": self.num_iter,
-                "output_coeff": self.barrier_coeff,
-                "sample_set": self.sample_set,
-                "init_ce_set": self.init_ce,
+                'status': self.result,
+                'problem': self.problem,
+                'learner_record': self.learner_sol_record,
+                'verifier_record': self.verifier_sol_record,
+                'barrier_coeff_record': self.barrier_coeff_record,
+                'num_iter': self.num_iter,
+                'output_coeff': self.barrier_coeff,
+                'sample_set': self.sample_set,
+                'init_ce_set': self.init_ce,
             }
-            pickle.dump(data_to_save, open(path, "wb"))
+            pickle.dump(data_to_save, open(path, 'wb'))
 
 
-def gurobi_model_construction(name="barrier", options=None):
+def gurobi_model_construction(name='barrier', options=None):
     gurobi_model = gp.Model(name)
     # gurobi_model.Params.FeasibilityTol = 1e-6
     # gurobi_model.Params.IntFeasTol = 1e-5
@@ -1127,7 +1127,7 @@ def gurobi_model_construction(name="barrier", options=None):
 
     if options is not None:
         if options.time_limit > 1e-3:
-            gurobi_model.setParam("TimeLimit", options.time_limit)
+            gurobi_model.setParam('TimeLimit', options.time_limit)
 
         if options.MIPFocus is not None:
             # TODO: figure out this option
@@ -1141,11 +1141,11 @@ def gurobi_model_initialization(problem, options=None):
     system = problem.system
     B = problem.barrier_fcn
 
-    gurobi_model = gurobi_model_construction(name="base_model", options=options)
+    gurobi_model = gurobi_model_construction(name='base_model', options=options)
     nx = system.x_dim
     B_output_dim = B.n_out
 
-    var_dict = {"x_0": nx, "x_1": nx, "B_0": B_output_dim, "B_1": B_output_dim}
+    var_dict = {'x_0': nx, 'x_1': nx, 'B_0': B_output_dim, 'B_1': B_output_dim}
     gurobi_model = gurobi_model_addVars(gurobi_model, var_dict)
 
     gurobi_model.update()
@@ -1160,57 +1160,57 @@ def gurobi_model_addVars(gurobi_model, var_dict):
     return gurobi_model
 
 
-def gurobi_results_processing(gurobi_model, sol_var, dim, mode="min", tol=0.0):
+def gurobi_results_processing(gurobi_model, sol_var, dim, mode='min', tol=0.0):
     solver_time = gurobi_model.Runtime
     gurobi_status = gurobi_model.Status
 
     if gurobi_status not in [2, 15]:
         sol = {
-            "obj": None,
-            "status": gurobi_status,
-            "sol": None,
-            "solver_time": solver_time,
+            'obj': None,
+            'status': gurobi_status,
+            'sol': None,
+            'solver_time': solver_time,
         }
-        status = "verifier_failure"
+        status = 'verifier_failure'
         ce = None
         return status, ce, sol
 
     obj_value = gurobi_model.objVal
 
-    if mode == "min" and obj_value > tol:
+    if mode == 'min' and obj_value > tol:
         ce = None
-    elif mode == "max" and obj_value < tol:
+    elif mode == 'max' and obj_value < tol:
         ce = None
     else:
         x = [
-            gurobi_model.getVarByName(sol_var + "[" + str(i) + "]") for i in range(dim)
+            gurobi_model.getVarByName(sol_var + '[' + str(i) + ']') for i in range(dim)
         ]
         x_sol = np.array([x[i].X for i in range(dim)]).reshape(1, -1)
-        x_sol = x_sol.astype("float32")
+        x_sol = x_sol.astype('float32')
 
         ce = x_sol
 
     sol = {
-        "obj": obj_value,
-        "status": gurobi_status,
-        "sol": ce,
-        "solver_time": solver_time,
+        'obj': obj_value,
+        'status': gurobi_status,
+        'sol': ce,
+        'solver_time': solver_time,
     }
-    status = "feasible"
+    status = 'feasible'
 
     return status, ce, sol
 
 
 def sample_counterexamples(problem, ce, num_samples, radius=0.1, opt_iter=None):
     # given a set of counterexamples, sample nearby states and optimize to augment the counterexamples
-    ce_x0 = ce["x0"]
-    new_ce_x0 = sample_ce_and_opt(problem, ce_x0, num_samples, "x0", radius, opt_iter)
+    ce_x0 = ce['x0']
+    new_ce_x0 = sample_ce_and_opt(problem, ce_x0, num_samples, 'x0', radius, opt_iter)
 
-    ce_xu = ce["xu"]
-    new_ce_xu = sample_ce_and_opt(problem, ce_xu, num_samples, "xu", radius, opt_iter)
+    ce_xu = ce['xu']
+    new_ce_xu = sample_ce_and_opt(problem, ce_xu, num_samples, 'xu', radius, opt_iter)
 
-    ce_x = ce["x"]
-    new_ce_x = sample_ce_and_opt(problem, ce_x, num_samples, "x", radius, opt_iter)
+    ce_x = ce['x']
+    new_ce_x = sample_ce_and_opt(problem, ce_x, num_samples, 'x', radius, opt_iter)
 
     device = problem.device
 
@@ -1221,7 +1221,7 @@ def sample_counterexamples(problem, ce, num_samples, radius=0.1, opt_iter=None):
             problem.system(torch.from_numpy(new_ce_x).to(device)).detach().cpu().numpy()
         )
 
-    new_ce = {"x0": new_ce_x0, "xu": new_ce_xu, "x": new_ce_x, "xn": new_ce_xn}
+    new_ce = {'x0': new_ce_x0, 'xu': new_ce_xu, 'x': new_ce_x, 'xn': new_ce_xn}
     return new_ce
 
 
@@ -1239,7 +1239,7 @@ def sample_ce_and_opt(problem, ce, num_samples, type, radius=0.1, opt_iter=None)
         center = ce[i]
         local_poly = Polyhedron.from_bounds(center - radius, center + radius)
         new_ce = uniform_random_sample_from_Polyhedron(local_poly, num_samples_batch)
-        new_ce = new_ce.astype("float32")
+        new_ce = new_ce.astype('float32')
 
         if opt_iter is not None:
             new_ce = torch.from_numpy(new_ce).to(device)
@@ -1251,20 +1251,20 @@ def sample_ce_and_opt(problem, ce, num_samples, type, radius=0.1, opt_iter=None)
         # make sure the original counterexample is included as the first entry
         # new_ce = np.vstack((center, new_ce))
 
-        if type == "x0":
+        if type == 'x0':
             idx_set = [
                 problem.X0.set.contains(new_ce[i, :]) for i in range(new_ce.shape[0])
             ]
-        elif type == "xu":
+        elif type == 'xu':
             idx_set = [
                 problem.Xu.set.contains(new_ce[i, :]) for i in range(new_ce.shape[0])
             ]
-        elif type == "x":
+        elif type == 'x':
             idx_set = [
                 problem.X.set.contains(new_ce[i, :]) for i in range(new_ce.shape[0])
             ]
         else:
-            raise ValueError("Type not recognized.")
+            raise ValueError('Type not recognized.')
 
         valid_samples = new_ce[idx_set]
 

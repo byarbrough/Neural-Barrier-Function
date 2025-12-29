@@ -42,15 +42,15 @@ class CE_Sampling_Options:
 
 class Trainer:
     # Given a dynamical system and (workspace, initial set, unsafe set), we train a vector barrier function to certify safety
-    def __init__(self, problem, verification_method="bab", options=None):
+    def __init__(self, problem, verification_method='bab', options=None):
         # problem contains all parameters describing the verification problem
         self.problem = problem
 
-        bab_yaml_path = arguments.Config["alg_options"]["bab"]["bab_yaml_path"]
+        bab_yaml_path = arguments.Config['alg_options']['bab']['bab_yaml_path']
 
         mip_solver_options = gurobi_options(
-            time_limit=arguments.Config["alg_options"]["mip"]["time_limit"],
-            MIPFocus=arguments.Config["alg_options"]["mip"]["MIPFocus"],
+            time_limit=arguments.Config['alg_options']['mip']['time_limit'],
+            MIPFocus=arguments.Config['alg_options']['mip']['MIPFocus'],
         )
 
         self.accpm_alg = ACCPM_Alg(
@@ -68,41 +68,41 @@ class Trainer:
         self.sample_set = None
 
         # maximum number of training samples for each condition
-        self.samples_pool_size = arguments.Config["alg_options"]["barrier_fcn"][
-            "train_options"
-        ]["samples_pool_size"]
+        self.samples_pool_size = arguments.Config['alg_options']['barrier_fcn'][
+            'train_options'
+        ]['samples_pool_size']
 
         self.device = next(self.barrier_fcn.net.parameters()).device
 
     def load_sample_set(self, load_data_path):
-        self.sample_set = pickle.load(open(load_data_path, "rb"))
+        self.sample_set = pickle.load(open(load_data_path, 'rb'))
 
     def generate_training_samples(self, save_data_path, sampling_options=None):
         if sampling_options is not None:
             num_samples_x0 = (
-                sampling_options["num_samples_x0"]
-                if "num_samples_x0" in sampling_options.keys()
+                sampling_options['num_samples_x0']
+                if 'num_samples_x0' in sampling_options.keys()
                 else 2000
             )
             num_samples_xu = (
-                sampling_options["num_samples_xu"]
-                if "num_samples_xu" in sampling_options.keys()
+                sampling_options['num_samples_xu']
+                if 'num_samples_xu' in sampling_options.keys()
                 else 2000
             )
             num_samples_x = (
-                sampling_options["num_samples_x"]
-                if "num_samples_x" in sampling_options.keys()
+                sampling_options['num_samples_x']
+                if 'num_samples_x' in sampling_options.keys()
                 else 5000
             )
         else:
-            num_samples_x0 = arguments.Config["alg_options"]["barrier_fcn"]["dataset"][
-                "num_samples_x0"
+            num_samples_x0 = arguments.Config['alg_options']['barrier_fcn']['dataset'][
+                'num_samples_x0'
             ]
-            num_samples_xu = arguments.Config["alg_options"]["barrier_fcn"]["dataset"][
-                "num_samples_xu"
+            num_samples_xu = arguments.Config['alg_options']['barrier_fcn']['dataset'][
+                'num_samples_xu'
             ]
-            num_samples_x = arguments.Config["alg_options"]["barrier_fcn"]["dataset"][
-                "num_samples_x"
+            num_samples_x = arguments.Config['alg_options']['barrier_fcn']['dataset'][
+                'num_samples_x'
             ]
 
         x0_samples = self.X0.sample(num_samples_x0)
@@ -113,12 +113,12 @@ class Trainer:
         )
 
         dataset = {
-            "x": x_samples.astype("float32"),
-            "xn": xn_samples.astype("float32"),
-            "x0": x0_samples.astype("float32"),
-            "xu": xu_samples.astype("float32"),
+            'x': x_samples.astype('float32'),
+            'xn': xn_samples.astype('float32'),
+            'x0': x0_samples.astype('float32'),
+            'xu': xu_samples.astype('float32'),
         }
-        pickle.dump(dataset, open(save_data_path, "wb"))
+        pickle.dump(dataset, open(save_data_path, 'wb'))
 
         self.sample_set = dataset
 
@@ -139,16 +139,16 @@ class Trainer:
         if dataset is None:
             dataset = self.sample_set
             if self.sample_set is None:
-                raise ValueError("Training data set is None.")
+                raise ValueError('Training data set is None.')
 
         # construct custom dataset
         x0_samples, xu_samples = (
-            torch.from_numpy(dataset["x0"].astype("float32")).to(device),
-            torch.from_numpy(dataset["xu"].astype("float32")).to(device),
+            torch.from_numpy(dataset['x0'].astype('float32')).to(device),
+            torch.from_numpy(dataset['xu'].astype('float32')).to(device),
         )
         x_samples, xn_samples = (
-            torch.from_numpy(dataset["x"].astype("float32")).to(device),
-            torch.from_numpy(dataset["xn"].astype("float32")).to(device),
+            torch.from_numpy(dataset['x'].astype('float32')).to(device),
+            torch.from_numpy(dataset['xn'].astype('float32')).to(device),
         )
         aug_x_samples = torch.cat((x_samples, xn_samples), dim=-1)
 
@@ -226,7 +226,7 @@ class Trainer:
             epoch_loss = epoch_loss / min(
                 [len(x0_dataloader), len(xu_dataloader), len(x_dataloader)]
             )
-            print(f"epoch {epoch} loss: {epoch_loss:.8f}")
+            print(f'epoch {epoch} loss: {epoch_loss:.8f}')
 
             total_loss = barrier_fcn.loss(x0_samples, xu_samples, x_samples, xn_samples)
             if total_loss <= early_stop_tol:
@@ -257,30 +257,30 @@ class Trainer:
 
     def _get_current_training_params(self):
         params = {}
-        params["barrier_network"] = copy.deepcopy(self.barrier_fcn.net.state_dict())
-        params["A"] = self.barrier_fcn.A.data.clone()
+        params['barrier_network'] = copy.deepcopy(self.barrier_fcn.net.state_dict())
+        params['A'] = self.barrier_fcn.A.data.clone()
         return params
 
     def _set_barrier_fcn_params(self, params):
-        self.barrier_fcn.net.load_state_dict(params["barrier_network"])
-        self.barrier_fcn.A.data = params["A"].clone()
+        self.barrier_fcn.net.load_state_dict(params['barrier_network'])
+        self.barrier_fcn.A.data = params['A'].clone()
 
     def verify_barrier_fcn(self, barrier_fcn=None, timeout=1e5):
         status, ce, sol_record = self.accpm_alg.verify_candidate_barrier(
             barrier_fcn, timeout=timeout
         )
-        solver_time = sum([item["solver_time"] for item in sol_record])
+        solver_time = sum([item['solver_time'] for item in sol_record])
         return status, ce, solver_time, sol_record
 
     def update_barrier_fcn_by_ACCPM(self, accpm_opt=None, timeout=1e5):
         if accpm_opt is None:
-            num_ce_samples = arguments.Config["alg_options"]["ce_sampling"][
-                "num_ce_samples"
+            num_ce_samples = arguments.Config['alg_options']['ce_sampling'][
+                'num_ce_samples'
             ]
-            radius = arguments.Config["alg_options"]["ce_sampling"]["radius"]
-            opt_iter = arguments.Config["alg_options"]["ce_sampling"]["opt_iter"]
-            num_ce_samples_accpm = arguments.Config["alg_options"]["ce_sampling"][
-                "num_ce_samples_accpm"
+            radius = arguments.Config['alg_options']['ce_sampling']['radius']
+            opt_iter = arguments.Config['alg_options']['ce_sampling']['opt_iter']
+            num_ce_samples_accpm = arguments.Config['alg_options']['ce_sampling'][
+                'num_ce_samples_accpm'
             ]
             ce_sampling_opt = CE_Sampling_Options(
                 num_ce_samples=num_ce_samples,
@@ -290,35 +290,35 @@ class Trainer:
             )
 
             accpm_opt = ACCPM_Options(
-                max_iter=arguments.Config["alg_options"]["ACCPM"]["max_iter"],
+                max_iter=arguments.Config['alg_options']['ACCPM']['max_iter'],
                 sample_ce_opt=ce_sampling_opt,
             )
 
         status, num_queries, results = self.accpm_alg.run(accpm_opt, timeout=timeout)
 
         # update the barrier function if a feasible one is found
-        if status == "feasible":
+        if status == 'feasible':
             # update the last linear layer of the barrier function when a feasible one is found
-            final_weights = results["output_coeff"]
-            C, b = final_weights["C"], final_weights["b"]
+            final_weights = results['output_coeff']
+            C, b = final_weights['C'], final_weights['b']
 
             self.barrier_fcn.net[-1].weight.data = torch.from_numpy(
-                C.astype("float32")
+                C.astype('float32')
             ).to(self.device)
             self.barrier_fcn.net[-1].bias.data = torch.from_numpy(
-                b.astype("float32")
+                b.astype('float32')
             ).to(self.device)
 
-            ce = results["last_ce_set"]
+            ce = results['last_ce_set']
         else:
-            ce = results["init_ce_set"]
+            ce = results['init_ce_set']
 
         # calculate solver time
-        verifier_record = results["verifier_record"]
+        verifier_record = results['verifier_record']
         if len(verifier_record) > 0:
             verifier_solver_time = sum(
                 [
-                    verifier_record[i][j]["solver_time"]
+                    verifier_record[i][j]['solver_time']
                     for i in range(len(verifier_record))
                     for j in range(len(verifier_record[i]))
                 ]
@@ -326,13 +326,13 @@ class Trainer:
         else:
             verifier_solver_time = 0.0
 
-        learner_record = results["learner_record"]
+        learner_record = results['learner_record']
         if len(learner_record) > 0:
             learner_solver_time = sum(
                 [
-                    item["solver_time"]
+                    item['solver_time']
                     for item in learner_record
-                    if item["solver_time"] is not None
+                    if item['solver_time'] is not None
                 ]
             )
         else:
@@ -346,14 +346,14 @@ class Trainer:
         if ce is None:
             return None
 
-        ce_x0 = ce["x0"]
-        new_ce_x0 = self.sample_ce_and_opt(ce_x0, num_samples, "x0", radius, opt_iter)
+        ce_x0 = ce['x0']
+        new_ce_x0 = self.sample_ce_and_opt(ce_x0, num_samples, 'x0', radius, opt_iter)
 
-        ce_xu = ce["xu"]
-        new_ce_xu = self.sample_ce_and_opt(ce_xu, num_samples, "xu", radius, opt_iter)
+        ce_xu = ce['xu']
+        new_ce_xu = self.sample_ce_and_opt(ce_xu, num_samples, 'xu', radius, opt_iter)
 
-        ce_x = ce["x"]
-        new_ce_x = self.sample_ce_and_opt(ce_x, num_samples, "x", radius, opt_iter)
+        ce_x = ce['x']
+        new_ce_x = self.sample_ce_and_opt(ce_x, num_samples, 'x', radius, opt_iter)
 
         if new_ce_x is None:
             new_ce_xn = None
@@ -365,7 +365,7 @@ class Trainer:
                 .numpy()
             )
 
-        new_ce = {"x0": new_ce_x0, "xu": new_ce_xu, "x": new_ce_x, "xn": new_ce_xn}
+        new_ce = {'x0': new_ce_x0, 'xu': new_ce_xu, 'x': new_ce_x, 'xn': new_ce_xn}
         return new_ce
 
     def sample_ce_and_opt(self, ce, num_samples, type, radius=0.1, opt_iter=None):
@@ -382,7 +382,7 @@ class Trainer:
             new_ce = uniform_random_sample_from_Polyhedron(
                 local_poly, num_samples_batch
             )
-            new_ce = new_ce.astype("float32")
+            new_ce = new_ce.astype('float32')
 
             if opt_iter is not None:
                 new_ce = torch.from_numpy(new_ce).to(self.device)
@@ -391,23 +391,23 @@ class Trainer:
                 )
                 new_ce = new_ce.detach().cpu().numpy()
 
-            if type == "x0":
+            if type == 'x0':
                 idx_set = [
                     self.problem.X0.set.contains(new_ce[i, :])
                     for i in range(new_ce.shape[0])
                 ]
-            elif type == "xu":
+            elif type == 'xu':
                 idx_set = [
                     self.problem.Xu.set.contains(new_ce[i, :])
                     for i in range(new_ce.shape[0])
                 ]
-            elif type == "x":
+            elif type == 'x':
                 idx_set = [
                     self.problem.X.set.contains(new_ce[i, :])
                     for i in range(new_ce.shape[0])
                 ]
             else:
-                raise ValueError("Type not recognized.")
+                raise ValueError('Type not recognized.')
 
             valid_samples = new_ce[idx_set]
 
@@ -423,7 +423,7 @@ class Trainer:
     def train_and_verify(
         self,
         num_iter,
-        method="verification-only",
+        method='verification-only',
         dataset=None,
         batch_size=50,
         save_model_path=None,
@@ -435,7 +435,7 @@ class Trainer:
         if dataset is None:
             dataset = self.sample_set
             if self.sample_set is None:
-                raise ValueError("Training data set is None.")
+                raise ValueError('Training data set is None.')
 
         if training_opt is None:
             training_opt = Training_Options()
@@ -452,7 +452,7 @@ class Trainer:
         radius = ce_sampling_opt.radius
         opt_iter = ce_sampling_opt.opt_iter
 
-        barrier_status = "unknown"
+        barrier_status = 'unknown'
         num_verifier_queries = 0
         ce_record = []
         train_time = []
@@ -461,7 +461,7 @@ class Trainer:
         time_out_status = False
 
         verification_sol_record = []
-        for i in tqdm(range(num_iter), desc="training_iter"):
+        for i in tqdm(range(num_iter), desc='training_iter'):
             if i % update_A_freq == 0:
                 update_A = True
             else:
@@ -482,11 +482,11 @@ class Trainer:
 
             if timeout < sum(train_time) + sum(verification_time):
                 time_out_status = True
-                barrier_status = "time_out"
-                print(f"Barrier function training timeout! ({timeout} seconds)")
+                barrier_status = 'time_out'
+                print(f'Barrier function training timeout! ({timeout} seconds)')
                 break
 
-            if method == "verification-only":
+            if method == 'verification-only':
                 runtime_budget = timeout - (sum(train_time) + sum(verification_time))
 
                 start_time = time.time()
@@ -500,7 +500,7 @@ class Trainer:
                 verification_time.append(verifier_time)
 
                 verification_sol_record.append(sol_record)
-            elif method == "fine-tuning":
+            elif method == 'fine-tuning':
                 runtime_budget = timeout - (sum(train_time) + sum(verification_time))
 
                 start_time = time.time()
@@ -516,8 +516,8 @@ class Trainer:
             else:
                 raise NotImplementedError
 
-            if status == "feasible":
-                barrier_status = "feasible"
+            if status == 'feasible':
+                barrier_status = 'feasible'
                 # save the updated barrier function
                 if save_model_path is not None:
                     # save the state dict on CPU
@@ -526,20 +526,20 @@ class Trainer:
                         state_dict[k] = v.cpu()
                     torch.save(state_dict, save_model_path)
 
-                verification_method = arguments.Config["alg_options"][
-                    "verification_method"
+                verification_method = arguments.Config['alg_options'][
+                    'verification_method'
                 ]
                 results = {
-                    "status": barrier_status,
-                    "ce_record": ce_record,
-                    "dataset": dataset,
-                    "num_queries": num_verifier_queries,
-                    "timeout_status": time_out_status,
-                    "method": method,
-                    "verification_method": verification_method,
-                    "verification_sol_record": verification_sol_record,
-                    "train_time": train_time,
-                    "verification_time": verification_time,
+                    'status': barrier_status,
+                    'ce_record': ce_record,
+                    'dataset': dataset,
+                    'num_queries': num_verifier_queries,
+                    'timeout_status': time_out_status,
+                    'method': method,
+                    'verification_method': verification_method,
+                    'verification_sol_record': verification_sol_record,
+                    'train_time': train_time,
+                    'verification_time': verification_time,
                 }
 
                 return barrier_status, num_verifier_queries, results
@@ -549,38 +549,38 @@ class Trainer:
             )
             dataset = sample_set_union(dataset, new_ce)
 
-            if status == "time_out":
+            if status == 'time_out':
                 time_out_status = True
-                barrier_status = "time_out"
-                print(f"Barrier function training timeout! ({timeout} seconds)")
+                barrier_status = 'time_out'
+                print(f'Barrier function training timeout! ({timeout} seconds)')
                 break
 
             if i < num_iter - 1:
                 # apply shrink and perturb
-                scaling_factor = arguments.Config["alg_options"]["barrier_fcn"][
-                    "train_options"
-                ]["scaling_factor"]
-                noise_weight = arguments.Config["alg_options"]["barrier_fcn"][
-                    "train_options"
-                ]["noise_weight"]
+                scaling_factor = arguments.Config['alg_options']['barrier_fcn'][
+                    'train_options'
+                ]['scaling_factor']
+                noise_weight = arguments.Config['alg_options']['barrier_fcn'][
+                    'train_options'
+                ]['noise_weight']
                 shrink_and_perturb(
                     self.barrier_fcn.net,
                     scaling_factor=scaling_factor,
                     noise_weight=noise_weight,
                 )
 
-        verification_method = arguments.Config["alg_options"]["verification_method"]
+        verification_method = arguments.Config['alg_options']['verification_method']
         results = {
-            "status": barrier_status,
-            "ce_record": ce_record,
-            "dataset": dataset,
-            "num_queries": num_verifier_queries,
-            "timeout_status": time_out_status,
-            "method": method,
-            "verification_method": verification_method,
-            "verification_sol_record": verification_sol_record,
-            "train_time": train_time,
-            "verification_time": verification_time,
+            'status': barrier_status,
+            'ce_record': ce_record,
+            'dataset': dataset,
+            'num_queries': num_verifier_queries,
+            'timeout_status': time_out_status,
+            'method': method,
+            'verification_method': verification_method,
+            'verification_sol_record': verification_sol_record,
+            'train_time': train_time,
+            'verification_time': verification_time,
         }
         return barrier_status, num_verifier_queries, results
 
@@ -592,36 +592,36 @@ def sample_set_union(set_1, set_2):
     if set_2 is None:
         return set_1
 
-    sample_set = {"x": None, "xn": None, "x0": None, "xu": None}
+    sample_set = {'x': None, 'xn': None, 'x0': None, 'xu': None}
 
-    if set_1["x0"] is None:
-        x0_set = set_2["x0"]
-    elif set_2["x0"] is None:
-        x0_set = set_1["x0"]
+    if set_1['x0'] is None:
+        x0_set = set_2['x0']
+    elif set_2['x0'] is None:
+        x0_set = set_1['x0']
     else:
-        x0_set = np.concatenate((set_1["x0"], set_2["x0"]), axis=0)
-    sample_set["x0"] = x0_set
+        x0_set = np.concatenate((set_1['x0'], set_2['x0']), axis=0)
+    sample_set['x0'] = x0_set
 
-    if set_1["xu"] is None:
-        xu_set = set_2["xu"]
-    elif set_2["xu"] is None:
-        xu_set = set_1["xu"]
+    if set_1['xu'] is None:
+        xu_set = set_2['xu']
+    elif set_2['xu'] is None:
+        xu_set = set_1['xu']
     else:
-        xu_set = np.concatenate((set_1["xu"], set_2["xu"]), axis=0)
-    sample_set["xu"] = xu_set
+        xu_set = np.concatenate((set_1['xu'], set_2['xu']), axis=0)
+    sample_set['xu'] = xu_set
 
-    if set_1["x"] is None:
-        x_set = set_2["x"]
-        xn_set = set_2["xn"]
-    elif set_2["x"] is None:
-        x_set = set_1["x"]
-        xn_set = set_1["xn"]
+    if set_1['x'] is None:
+        x_set = set_2['x']
+        xn_set = set_2['xn']
+    elif set_2['x'] is None:
+        x_set = set_1['x']
+        xn_set = set_1['xn']
     else:
-        x_set = np.concatenate((set_1["x"], set_2["x"]), axis=0)
-        xn_set = np.concatenate((set_1["xn"], set_2["xn"]), axis=0)
+        x_set = np.concatenate((set_1['x'], set_2['x']), axis=0)
+        xn_set = np.concatenate((set_1['xn'], set_2['xn']), axis=0)
 
-    sample_set["x"] = x_set
-    sample_set["xn"] = xn_set
+    sample_set['x'] = x_set
+    sample_set['xn'] = xn_set
     return sample_set
 
 

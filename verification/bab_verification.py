@@ -50,31 +50,31 @@ def _build_config_dict(yaml_file_path=None):
     config = {}
 
     # General settings
-    config["general"] = {
-        "device": arguments.Config["general"]["device"],
-        "seed": arguments.Config["general"]["seed"],
-        "complete_verifier": "bab",
-        "enable_incomplete_verification": True,
+    config['general'] = {
+        'device': arguments.Config['general']['device'],
+        'seed': arguments.Config['general']['seed'],
+        'complete_verifier': 'bab',
+        'enable_incomplete_verification': True,
     }
 
     # BAB settings
-    config["bab"] = {
-        "timeout": arguments.Config["bab"]["timeout"],
-        "branching": arguments.Config["bab"]["branching"],
+    config['bab'] = {
+        'timeout': arguments.Config['bab']['timeout'],
+        'branching': arguments.Config['bab']['branching'],
     }
 
     # Solver settings
-    config["solver"] = {
-        "bound_prop_method": arguments.Config["solver"]["bound_prop_method"],
-        "alpha-crown": arguments.Config["solver"]["alpha-crown"],
-        "beta-crown": arguments.Config["solver"]["beta-crown"],
+    config['solver'] = {
+        'bound_prop_method': arguments.Config['solver']['bound_prop_method'],
+        'alpha-crown': arguments.Config['solver']['alpha-crown'],
+        'beta-crown': arguments.Config['solver']['beta-crown'],
     }
 
     # Attack settings
-    config["attack"] = {
-        "pgd_order": arguments.Config["attack"]["pgd_order"],
-        "pgd_steps": arguments.Config["attack"]["pgd_steps"],
-        "pgd_restarts": arguments.Config["attack"]["pgd_restarts"],
+    config['attack'] = {
+        'pgd_order': arguments.Config['attack']['pgd_order'],
+        'pgd_steps': arguments.Config['attack']['pgd_steps'],
+        'pgd_restarts': arguments.Config['attack']['pgd_restarts'],
     }
 
     return config
@@ -136,7 +136,7 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
 
     # Create solver and run verification
     solver = ABCrownSolver(
-        spec=spec, computing_graph=nn_model, config=config, name="barrier_verification"
+        spec=spec, computing_graph=nn_model, config=config, name='barrier_verification'
     )
 
     result = solver.solve()
@@ -148,25 +148,25 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
 
     # Extract adversarial samples if any
     adv_samples = None
-    if "counterexamples" in result.reference:
-        adv_samples = result.reference["counterexamples"]
-    elif "attack_examples" in result.reference:
-        adv_samples = result.reference["attack_examples"]
+    if 'counterexamples' in result.reference:
+        adv_samples = result.reference['counterexamples']
+    elif 'attack_examples' in result.reference:
+        adv_samples = result.reference['attack_examples']
 
     # Build result dictionary matching old interface
     bab_result = {
-        "incomplete_lb": result.reference.get("global_lb", None),
-        "bab_lb": result.reference.get("bab_lb", None),
-        "bab_ub": result.reference.get("bab_ub", None),
-        "status": verified_status,
-        "status_lst": [verified_status],
-        "solver_time": solver_time,
-        "adv_samples": [[None, adv_samples]] if adv_samples is not None else None,
-        "bab_sol": None,
-        "bab_time_out": result.reference.get("timeout", False),
-        "data_lb": data_lb,
-        "data_ub": data_ub,
-        "stats": result.stats,
+        'incomplete_lb': result.reference.get('global_lb', None),
+        'bab_lb': result.reference.get('bab_lb', None),
+        'bab_ub': result.reference.get('bab_ub', None),
+        'status': verified_status,
+        'status_lst': [verified_status],
+        'solver_time': solver_time,
+        'adv_samples': [[None, adv_samples]] if adv_samples is not None else None,
+        'bab_sol': None,
+        'bab_time_out': result.reference.get('timeout', False),
+        'data_lb': data_lb,
+        'data_ub': data_ub,
+        'stats': result.stats,
     }
 
     return verified_status, bab_result
@@ -194,18 +194,18 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
     if net is None:
         net = B.net
 
-    if type == "xu":
+    if type == 'xu':
         # Verify unsafe region condition: B(x) > 0 for all x in Xu
         # Find counterexample where B(x) <= tol (unsafe)
         Xu = problem.Xu
         assert Xu.is_box
-        data_lb = torch.from_numpy(Xu.lb.astype("float32")).unsqueeze(0).to(device)
-        data_ub = torch.from_numpy(Xu.ub.astype("float32")).unsqueeze(0).to(device)
+        data_lb = torch.from_numpy(Xu.lb.astype('float32')).unsqueeze(0).to(device)
+        data_ub = torch.from_numpy(Xu.ub.astype('float32')).unsqueeze(0).to(device)
 
         C = torch.zeros(1, B.n_out)
         C[0][B.unsafe_index] = 1.0
-        tol_unsafe = arguments.Config["alg_options"]["barrier_fcn"]["train_options"][
-            "condition_tol"
+        tol_unsafe = arguments.Config['alg_options']['barrier_fcn']['train_options'][
+            'condition_tol'
         ]
         rhs = torch.tensor([[tol_unsafe]])
 
@@ -213,15 +213,15 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
             net, data_lb, data_ub, C, rhs, yaml_file_path
         )
 
-        if bab_result["adv_samples"] is not None:
-            adv_sample_filter_radius_xu = arguments.Config["alg_options"]["bab"][
-                "adv_sample_filter_radius_xu"
+        if bab_result['adv_samples'] is not None:
+            adv_sample_filter_radius_xu = arguments.Config['alg_options']['bab'][
+                'adv_sample_filter_radius_xu'
             ]
             filtered_samples = [
                 filter_adversarial_samples(
                     item[1], filter_radius=adv_sample_filter_radius_xu
                 )
-                for item in bab_result["adv_samples"]
+                for item in bab_result['adv_samples']
                 if item is not None
             ]
             filtered_samples = [item for item in filtered_samples if item is not None]
@@ -235,17 +235,17 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
 
         return verified_status, adv_samples, bab_result
 
-    elif type == "x0":
+    elif type == 'x0':
         # Verify initial region condition: B(x) <= 0 for all x in X0
         # Find counterexample where -B(x) < -tol, i.e., B(x) > tol
         X0 = problem.X0
         assert X0.is_box
-        data_lb = torch.from_numpy(X0.lb.astype("float32")).unsqueeze(0).to(device)
-        data_ub = torch.from_numpy(X0.ub.astype("float32")).unsqueeze(0).to(device)
+        data_lb = torch.from_numpy(X0.lb.astype('float32')).unsqueeze(0).to(device)
+        data_ub = torch.from_numpy(X0.ub.astype('float32')).unsqueeze(0).to(device)
 
         C = -torch.eye(B.n_out)
-        tol_init = arguments.Config["alg_options"]["barrier_fcn"]["train_options"][
-            "condition_tol"
+        tol_init = arguments.Config['alg_options']['barrier_fcn']['train_options'][
+            'condition_tol'
         ]
         rhs = tol_init * torch.ones(B.n_out, 1)
 
@@ -253,15 +253,15 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
             net, data_lb, data_ub, C, rhs, yaml_file_path
         )
 
-        adv_sample_filter_radius_x0 = arguments.Config["alg_options"]["bab"][
-            "adv_sample_filter_radius_x0"
+        adv_sample_filter_radius_x0 = arguments.Config['alg_options']['bab'][
+            'adv_sample_filter_radius_x0'
         ]
-        if bab_result["adv_samples"] is not None:
+        if bab_result['adv_samples'] is not None:
             filtered_samples = [
                 filter_adversarial_samples(
                     item[1], filter_radius=adv_sample_filter_radius_x0
                 )
-                for item in bab_result["adv_samples"]
+                for item in bab_result['adv_samples']
                 if item is not None
             ]
             filtered_samples = [item for item in filtered_samples if item is not None]
@@ -275,16 +275,16 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
 
         return verified_status, adv_samples, bab_result
 
-    elif type == "x":
+    elif type == 'x':
         # Verify decrease condition: A@B(x) - B(f(x)) <= 0 for all x in X
         X = problem.X
         assert X.is_box
-        data_lb = torch.from_numpy(X.lb.astype("float32")).unsqueeze(0).to(device)
-        data_ub = torch.from_numpy(X.ub.astype("float32")).unsqueeze(0).to(device)
+        data_lb = torch.from_numpy(X.lb.astype('float32')).unsqueeze(0).to(device)
+        data_ub = torch.from_numpy(X.ub.astype('float32')).unsqueeze(0).to(device)
 
         C = torch.eye(B.n_out)
-        tol_dec = arguments.Config["alg_options"]["barrier_fcn"]["train_options"][
-            "condition_tol"
+        tol_dec = arguments.Config['alg_options']['barrier_fcn']['train_options'][
+            'condition_tol'
         ]
         rhs = tol_dec * torch.ones(B.n_out, 1)
 
@@ -298,15 +298,15 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
             dec_net, data_lb, data_ub, C, rhs, yaml_file_path
         )
 
-        adv_sample_filter_radius_x = arguments.Config["alg_options"]["bab"][
-            "adv_sample_filter_radius_x"
+        adv_sample_filter_radius_x = arguments.Config['alg_options']['bab'][
+            'adv_sample_filter_radius_x'
         ]
-        if bab_result["adv_samples"] is not None:
+        if bab_result['adv_samples'] is not None:
             filtered_samples = [
                 filter_adversarial_samples(
                     item[1], filter_radius=adv_sample_filter_radius_x
                 )
-                for item in bab_result["adv_samples"]
+                for item in bab_result['adv_samples']
                 if item is not None
             ]
             filtered_samples = [item for item in filtered_samples if item is not None]
@@ -321,7 +321,7 @@ def bab_barrier_fcn_verification(problem, type, yaml_file_path, net=None):
         return verified_status, adv_samples, bab_result
 
     else:
-        raise ValueError(f"Unknown verification type: {type}")
+        raise ValueError(f'Unknown verification type: {type}')
 
 
 def filter_adversarial_samples(samples, filter_radius=1e-2):

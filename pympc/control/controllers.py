@@ -98,14 +98,14 @@ class ModelPredictiveController(object):
 
         # solve and check feasibility
         sol = self.mpqp.solve(x)
-        if sol["min"] is None:
+        if sol['min'] is None:
             return None, None
 
         # from vector to list of vectors
         u_feedforward = [
-            sol["argmin"][self.S.nu * i : self.S.nu * (i + 1)] for i in range(self.N)
+            sol['argmin'][self.S.nu * i : self.S.nu * (i + 1)] for i in range(self.N)
         ]
-        V = sol["min"]
+        V = sol['min']
 
         return u_feedforward, V
 
@@ -162,7 +162,7 @@ class ModelPredictiveController(object):
 
         # check that the explicit solution has been found
         if self.explicit_solution is None:
-            raise ValueError("explicit solution not stored.")
+            raise ValueError('explicit solution not stored.')
 
         # evaluate lookup table
         u = self.explicit_solution.u(x)
@@ -205,9 +205,9 @@ class ModelPredictiveController(object):
 
         # check that the required plot is 2d and that the solution is available
         if self.S.nx != 2:
-            raise ValueError("can plot only 2-dimensional partitions.")
+            raise ValueError('can plot only 2-dimensional partitions.')
         if self.explicit_solution is None:
-            raise ValueError("explicit solution not stored.")
+            raise ValueError('explicit solution not stored.')
 
         # plot every critical region with random colors
         for cr in self.explicit_solution.critical_regions:
@@ -231,9 +231,9 @@ class ModelPredictiveController(object):
 
         # check dimension of the state
         if self.S.nx != 2:
-            raise ValueError("can plot only 2-dimensional value functions.")
+            raise ValueError('can plot only 2-dimensional value functions.')
         if self.explicit_solution is None:
-            raise ValueError("explicit solution not stored.")
+            raise ValueError('explicit solution not stored.')
 
         # get feasible set
         feasible_set = self.mpqp.get_feasible_set()
@@ -262,7 +262,7 @@ class ModelPredictiveController(object):
         feasible_set.plot(**kwargs)
         cp = plt.contour(X, Y, Z)
         plt.colorbar(cp)
-        plt.title(r"$V^*(x)$")
+        plt.title(r'$V^*(x)$')
 
 
 class HybridModelPredictiveController(object):
@@ -357,9 +357,9 @@ class HybridModelPredictiveController(object):
                 for k in range(S_i.nx):
                     f = A_i[k]
                     sol = linear_program(f, D_j.A, D_j.b, D_j.C, D_j.d)
-                    alpha_ij.append(sol["min"] + S_i.c[k])
+                    alpha_ij.append(sol['min'] + S_i.c[k])
                     sol = linear_program(-f, D_j.A, D_j.b, D_j.C, D_j.d)
-                    beta_ij.append(-sol["min"] + S_i.c[k])
+                    beta_ij.append(-sol['min'] + S_i.c[k])
 
                 # close inner loop appending bigMs
                 alpha_i.append(np.vstack(alpha_ij))
@@ -408,7 +408,7 @@ class HybridModelPredictiveController(object):
                 for k in range(D_i.A.shape[0]):
                     f = -D_i.A[k]
                     sol = linear_program(f, D_j.A, D_j.b, D_j.C, D_j.d)
-                    gamma_ij.append(-sol["min"] - D_i.b[k])
+                    gamma_ij.append(-sol['min'] - D_i.b[k])
 
                 # close inner loop appending bigMs
                 gamma_i.append(np.vstack(gamma_ij))
@@ -444,19 +444,19 @@ class HybridModelPredictiveController(object):
 
         # objective of the mpmiqp
         H = dict()
-        H["uu"] = block_diag(*[self.R for i in range(self.N)])
+        H['uu'] = block_diag(*[self.R for i in range(self.N)])
         Q_bar = block_diag(*[self.Q for i in range(self.N)] + [self.P])
-        H["zz"] = Bz_bar.T.dot(Q_bar).dot(Bz_bar)
-        H["zx"] = Bz_bar.T.dot(Q_bar).dot(A_bar)
-        H["xx"] = A_bar.T.dot(Q_bar).dot(A_bar)
+        H['zz'] = Bz_bar.T.dot(Q_bar).dot(Bz_bar)
+        H['zx'] = Bz_bar.T.dot(Q_bar).dot(A_bar)
+        H['xx'] = A_bar.T.dot(Q_bar).dot(A_bar)
 
         # constraints of the mpmiqp
         A = dict()
-        A["u"] = E_bar["u"]
-        A["z"] = E_bar["z"] + E_bar["x"].dot(Bz_bar)
-        A["d"] = E_bar["d"]
-        A["x"] = E_bar["x"].dot(A_bar)
-        b = E_bar["0"]
+        A['u'] = E_bar['u']
+        A['z'] = E_bar['z'] + E_bar['x'].dot(Bz_bar)
+        A['d'] = E_bar['d']
+        A['x'] = E_bar['x'].dot(A_bar)
+        b = E_bar['0']
 
         return MultiParametricMixedIntegerQuadraticProgram(H, A, b)
 
@@ -481,7 +481,7 @@ class HybridModelPredictiveController(object):
 
         # build blocks
         E = dict()
-        E["x"] = np.vstack(
+        E['x'] = np.vstack(
             (
                 np.zeros((nx * s, nx)),  # Equation 1
                 np.zeros((nx * s, nx)),  # Equation 2
@@ -491,7 +491,7 @@ class HybridModelPredictiveController(object):
                 np.zeros((2, nx)),  # Equation 6
             )
         )
-        E["u"] = np.vstack(
+        E['u'] = np.vstack(
             (
                 np.zeros((nx * s, nu)),  # Equation 1
                 np.zeros((nx * s, nu)),  # Equation 2
@@ -501,7 +501,7 @@ class HybridModelPredictiveController(object):
                 np.zeros((2, nu)),  # Equation 6
             )
         )
-        E["z"] = np.vstack(
+        E['z'] = np.vstack(
             (
                 block_diag(*[-np.eye(nx)] * s),  # Equation 1
                 block_diag(*[np.eye(nx)] * s),  # Equation 2
@@ -511,7 +511,7 @@ class HybridModelPredictiveController(object):
                 np.zeros((2, nx * s)),  # Equation 6
             )
         )
-        E["d"] = np.vstack(
+        E['d'] = np.vstack(
             (
                 block_diag(*[self._alpha[i][i] for i in range(s)]),  # Equation 1
                 -block_diag(*[self._beta[i][i] for i in range(s)]),  # Equation 2
@@ -521,7 +521,7 @@ class HybridModelPredictiveController(object):
                 np.vstack((np.ones((1, s)), -np.ones((1, s)))),  # Equation 6
             )
         )
-        E["0"] = np.concatenate(
+        E['0'] = np.concatenate(
             (
                 np.zeros(nx * s),  # Equation 1
                 np.zeros(nx * s),  # Equation 2
@@ -587,20 +587,20 @@ class HybridModelPredictiveController(object):
 
         # build blocks
         E_bar = dict()
-        E_bar["x"] = block_diag(*[E["x"]] * self.N + [self.X_N.A])
-        E_bar["u"] = block_diag(*[E["u"]] * self.N)
-        E_bar["u"] = np.vstack(
-            (E_bar["u"], np.zeros((self.X_N.A.shape[0], E_bar["u"].shape[1])))
+        E_bar['x'] = block_diag(*[E['x']] * self.N + [self.X_N.A])
+        E_bar['u'] = block_diag(*[E['u']] * self.N)
+        E_bar['u'] = np.vstack(
+            (E_bar['u'], np.zeros((self.X_N.A.shape[0], E_bar['u'].shape[1])))
         )
-        E_bar["z"] = block_diag(*[E["z"]] * self.N)
-        E_bar["z"] = np.vstack(
-            (E_bar["z"], np.zeros((self.X_N.A.shape[0], E_bar["z"].shape[1])))
+        E_bar['z'] = block_diag(*[E['z']] * self.N)
+        E_bar['z'] = np.vstack(
+            (E_bar['z'], np.zeros((self.X_N.A.shape[0], E_bar['z'].shape[1])))
         )
-        E_bar["d"] = block_diag(*[E["d"]] * self.N)
-        E_bar["d"] = np.vstack(
-            (E_bar["d"], np.zeros((self.X_N.A.shape[0], E_bar["d"].shape[1])))
+        E_bar['d'] = block_diag(*[E['d']] * self.N)
+        E_bar['d'] = np.vstack(
+            (E_bar['d'], np.zeros((self.X_N.A.shape[0], E_bar['d'].shape[1])))
         )
-        E_bar["0"] = np.concatenate([E["0"]] * self.N + [self.X_N.b])
+        E_bar['0'] = np.concatenate([E['0']] * self.N + [self.X_N.b])
 
         return E_bar
 
@@ -643,7 +643,7 @@ class HybridModelPredictiveController(object):
 
         # solve and check feasibility
         sol = self.mpmiqp.solve(x)
-        if sol["min"] is None:
+        if sol['min'] is None:
             return None, None, None, None
 
         # from vector to list of vectors
@@ -651,9 +651,9 @@ class HybridModelPredictiveController(object):
         nx = self.S.nx
         s = self.S.nm
         nz = nx * s
-        u_list = [sol["u"][nu * i : nu * (i + 1)] for i in range(self.N)]
-        z_list = [sol["z"][nz * i : nz * (i + 1)] for i in range(self.N)]
-        d_list = [sol["d"][s * i : s * (i + 1)] for i in range(self.N)]
+        u_list = [sol['u'][nu * i : nu * (i + 1)] for i in range(self.N)]
+        z_list = [sol['z'][nz * i : nz * (i + 1)] for i in range(self.N)]
+        d_list = [sol['d'][s * i : s * (i + 1)] for i in range(self.N)]
         x_list = [x]
         for z in z_list:
             x_list.append(np.sum([z[nx * i : nx * (i + 1)] for i in range(s)], axis=0))
@@ -661,7 +661,7 @@ class HybridModelPredictiveController(object):
         for d in d_list:
             mode_sequence.append(np.where(d > 0.5)[0][0])
 
-        return u_list, x_list, mode_sequence, sol["min"]
+        return u_list, x_list, mode_sequence, sol['min']
 
     def feedback(self, x):
         """
@@ -741,14 +741,14 @@ def condense_optimal_control_problem(S, Q, R, P, X_N, mode_sequence):
 
     # get blocks quadratic term objective
     H = dict()
-    H["uu"] = R_bar + B_bar.T.dot(Q_bar).dot(B_bar)
-    H["ux"] = B_bar.T.dot(Q_bar).dot(A_bar)
-    H["xx"] = A_bar.T.dot(Q_bar).dot(A_bar)
+    H['uu'] = R_bar + B_bar.T.dot(Q_bar).dot(B_bar)
+    H['ux'] = B_bar.T.dot(Q_bar).dot(A_bar)
+    H['xx'] = A_bar.T.dot(Q_bar).dot(A_bar)
 
     # get blocks linear term objective
     f = dict()
-    f["u"] = B_bar.T.dot(Q_bar).dot(c_bar)
-    f["x"] = A_bar.T.dot(Q_bar).dot(c_bar)
+    f['u'] = B_bar.T.dot(Q_bar).dot(c_bar)
+    f['x'] = A_bar.T.dot(Q_bar).dot(c_bar)
     g = 0.5 * c_bar.dot(Q_bar).dot(c_bar)
 
     # stack constraint matrices
@@ -760,8 +760,8 @@ def condense_optimal_control_problem(S, Q, R, P, X_N, mode_sequence):
 
     # get blocks for condensed contraints
     A = dict()
-    A["u"] = G_bar + F_bar.dot(B_bar)
-    A["x"] = F_bar.dot(A_bar)
+    A['u'] = G_bar + F_bar.dot(B_bar)
+    A['x'] = F_bar.dot(A_bar)
     b = h_bar - F_bar.dot(c_bar)
 
     return MultiParametricQuadraticProgram(H, f, g, A, b)
