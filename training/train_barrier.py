@@ -15,7 +15,8 @@ from tqdm import tqdm
 import time
 from utils.training import setup_relu, extract_relu_structure
 
-import complete_verifier.arguments as arguments
+import setup_paths  # noqa: F401
+import config as arguments
 class Training_Options:
     def __init__(self, l1_lambda=None, num_epochs=50, early_stop_tol=1e-10, update_A_freq=1):
         self.l1_lambda = l1_lambda

@@ -12,7 +12,8 @@ from pympc.geometry.polyhedron import Polyhedron
 from utils.sampling import uniform_random_sample_from_Polyhedron, scale_polyhedron
 from verification.bab_verification import bab_barrier_fcn_verification
 
-import complete_verifier.arguments as arguments
+import setup_paths  # noqa: F401
+import config as arguments
 from verification.bab_verification import filter_adversarial_samples
 
 class gurobi_options:

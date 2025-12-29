@@ -24,7 +24,8 @@ import os
 from cutting_plane.ACCPM import Problem, ACCPM_Options
 import time
 
-import complete_verifier.arguments as arguments
+import setup_paths  # noqa: F401
+import config as arguments
 from utils.sampling import set_seed
 import json
 
