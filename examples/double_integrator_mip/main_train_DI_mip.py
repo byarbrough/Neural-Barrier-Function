@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from barrier_utils.sampling import scale_polyhedron
+from utils.sampling import scale_polyhedron
 
 from dynamics.models import (
     Barrier_Fcn,
@@ -30,9 +30,8 @@ import os
 from cutting_plane.ACCPM import Problem, ACCPM_Options
 import time
 
-import setup_paths  # noqa: F401
-import config as arguments
-from barrier_utils.sampling import set_seed
+import complete_verifier.arguments as arguments
+from utils.sampling import set_seed
 import json
 
 from dynamics.models import NeuralNetwork

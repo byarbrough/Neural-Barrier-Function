@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from barrier_utils.sampling import find_bounding_box
+from utils.sampling import find_bounding_box
 from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm
 import numpy as np
 

@@ -2,6 +2,7 @@
 general:
   device: cuda
   seed: 0
+  record_bounds: True
 attack: # Currently attack is only implemented for Linf norm.
   pgd_steps: 100  # Increase for a stronger attack. A PGD attack will be used before verification to filter on non-robust data examples.
   pgd_restarts: 30  # Increase for a stronger attack.

@@ -1,22 +1,12 @@
-# Core dependencies for Python 3.11+
-numpy>=1.24.0
-torch>=2.4.0
+numpy
 tqdm
 matplotlib
 pandas
-pyyaml
-scipy
-
-# Optimization
-cvxpy
-gurobipy
-
-# Verification (auto-lirpa included in alpha-beta-CROWN submodule)
-onnxruntime>=1.14.0
-onnx2pytorch
-
-# Utilities
+onnxruntime
 sortedcontainers
+gurobipy
+auto-lirpa
 scikit-learn
 chardet
+onnx2pytorch
 psutil

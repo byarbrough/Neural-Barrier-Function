@@ -4,12 +4,13 @@ import torch.nn.functional as F
 
 from verification.nn_verification import (
     find_preactivation_bounds,
+    output_Lp_bounds_LiRPA,
 )
 from verification.optimization import add_gurobi_constr_for_MLP
 
 import numpy as np
 from pympc.geometry.polyhedron import Polyhedron
-from barrier_utils.sampling import uniform_random_sample_from_Polyhedron
+from utils.sampling import uniform_random_sample_from_Polyhedron
 
 import gurobipy as gp
 

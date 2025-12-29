@@ -1,4 +1,5 @@
 # external imports
+import numpy as np
 
 # internal inputs
 from pympc.optimization.solvers.pnnls import (

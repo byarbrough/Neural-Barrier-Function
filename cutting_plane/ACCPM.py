@@ -4,18 +4,15 @@ import numpy as np
 import gurobipy as gp
 import pickle
 import warnings
+from tqdm import tqdm
 import torch.nn as nn
 from verification.optimization import search_counterexamples
 import time
 from pympc.geometry.polyhedron import Polyhedron
-from barrier_utils.sampling import (
-    uniform_random_sample_from_Polyhedron,
-    scale_polyhedron,
-)
+from utils.sampling import uniform_random_sample_from_Polyhedron, scale_polyhedron
 from verification.bab_verification import bab_barrier_fcn_verification
 
-import setup_paths  # noqa: F401
-import config as arguments
+import complete_verifier.arguments as arguments
 from verification.bab_verification import filter_adversarial_samples
 
 
@@ -58,7 +55,7 @@ class Learner:
     def find_analytic_center(self, samples, options=None):
         try:
             sol = self.analytic_center(samples, options=options)
-        except Exception:
+        except Exception as e:
             warnings.warn('Solver failed when solving the analytic center problem. ')
             sol = {'c': None, 'status': 'infeasible', 'solver_time': 0.0}
 

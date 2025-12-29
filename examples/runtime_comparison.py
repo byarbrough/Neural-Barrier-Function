@@ -10,7 +10,9 @@ project_dir = os.path.dirname(script_directory)
 sys.path.append(project_dir)
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
+from matplotlib.patches import Patch
 
 
 if __name__ == '__main__':

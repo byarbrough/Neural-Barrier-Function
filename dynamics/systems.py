@@ -1,8 +1,11 @@
 import torch
+import numpy as np
 import torch.nn as nn
 
 from verification.nn_verification import find_preactivation_bounds
 from verification.optimization import add_gurobi_constr_for_MLP
+from utils.training import get_nn_info
+import gurobipy as gp
 from pympc.geometry.polyhedron import Polyhedron
 
 

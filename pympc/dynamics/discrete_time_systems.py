@@ -1,6 +1,6 @@
 # external imports
 import numpy as np
-from scipy.linalg import solve_discrete_are
+from scipy.linalg import block_diag, solve_discrete_are
 from copy import copy
 
 # internal imports

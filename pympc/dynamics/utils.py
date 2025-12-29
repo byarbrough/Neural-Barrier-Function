@@ -1,4 +1,5 @@
 # external imports
+import numpy as np
 
 
 def check_affine_system(A, B, c=None, h=None):
