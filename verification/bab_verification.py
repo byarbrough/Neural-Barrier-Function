@@ -117,14 +117,16 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
     C_np = C.cpu().numpy() if torch.is_tensor(C) else C
     rhs_np = rhs.cpu().numpy() if torch.is_tensor(rhs) else rhs
 
-    # Create output spec clauses - each row of C is an AND constraint
-    # Format: list of (C_tensor, rhs_tensor) tuples for OR clauses
-    # For barrier verification, each constraint is an independent check
+    # Create output spec clauses - each row of C is an independent OR clause
+    # Format: list of lists of (C_tensor, rhs_tensor) tuples
+    # Outer list = OR (disjunction), inner list = AND (conjunction)
+    # For barrier verification, each constraint is independently verified (OR semantics)
     clauses = []
     for i in range(C_np.shape[0]):
         c_row = torch.tensor(C_np[i : i + 1], dtype=torch.float32)
         rhs_val = torch.tensor([rhs_np[i].item()], dtype=torch.float32)
-        clauses.append((c_row, rhs_val))
+        # Each constraint is wrapped in its own list for proper OR semantics
+        clauses.append([(c_row, rhs_val)])
 
     # Build verification spec
     spec = VerificationSpec.build_from_input_bounds(
@@ -146,12 +148,25 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
     verified_status = result.status
     verified_success = result.success
 
-    # Extract adversarial samples if any
+    # Extract adversarial samples from result.stats (where attack puts them)
+    # The format expected by downstream code is a list of [idx, samples] pairs
     adv_samples = None
-    if 'counterexamples' in result.reference:
-        adv_samples = result.reference['counterexamples']
-    elif 'attack_examples' in result.reference:
+    if result.stats.get('all_adv_candidates') is not None:
+        # all_adv_candidates contains all adversarial examples found during attack
+        adv_samples = result.stats['all_adv_candidates']
+    elif result.stats.get('attack_examples') is not None:
+        adv_samples = result.stats['attack_examples']
+
+    # Also check reference dict for attack examples (set during BaB if bab_attack_enabled)
+    if adv_samples is None and result.reference.get('attack_examples') is not None:
         adv_samples = result.reference['attack_examples']
+
+    # Format adversarial samples to match expected structure:
+    # Original format was list of [idx, samples] pairs from bab_sol_lst
+    # We wrap in [[None, samples]] to maintain compatibility
+    formatted_adv_samples = None
+    if adv_samples is not None:
+        formatted_adv_samples = [[None, adv_samples]]
 
     # Build result dictionary matching old interface
     bab_result = {
@@ -161,7 +176,7 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
         'status': verified_status,
         'status_lst': [verified_status],
         'solver_time': solver_time,
-        'adv_samples': [[None, adv_samples]] if adv_samples is not None else None,
+        'adv_samples': formatted_adv_samples,
         'bab_sol': None,
         'bab_time_out': result.reference.get('timeout', False),
         'data_lb': data_lb,
