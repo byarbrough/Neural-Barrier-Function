@@ -1,6 +1,9 @@
 import torch
 import numpy as np
-from utils.sampling import generate_training_data, uniform_random_sample_from_Polyhedron
+from barrier_utils.sampling import (
+    generate_training_data,
+    uniform_random_sample_from_Polyhedron,
+)
 import copy
 import os
 

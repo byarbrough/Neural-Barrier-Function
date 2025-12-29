@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from utils.sampling import scale_polyhedron
+from barrier_utils.sampling import scale_polyhedron
 
 from dynamics.models import (
     Barrier_Fcn,
@@ -33,7 +33,7 @@ import time
 import setup_paths  # noqa: F401
 import config as arguments
 
-from utils.sampling import set_seed
+from barrier_utils.sampling import set_seed
 import json
 
 from dynamics.models import NeuralNetwork

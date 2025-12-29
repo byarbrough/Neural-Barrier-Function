@@ -1,5 +1,5 @@
 import gurobipy as gp
-from utils.training import get_nn_info
+from barrier_utils.training import get_nn_info
 import torch.optim as optim
 import torch
 

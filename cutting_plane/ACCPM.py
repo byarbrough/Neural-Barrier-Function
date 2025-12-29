@@ -8,7 +8,10 @@ import torch.nn as nn
 from verification.optimization import search_counterexamples
 import time
 from pympc.geometry.polyhedron import Polyhedron
-from utils.sampling import uniform_random_sample_from_Polyhedron, scale_polyhedron
+from barrier_utils.sampling import (
+    uniform_random_sample_from_Polyhedron,
+    scale_polyhedron,
+)
 from verification.bab_verification import bab_barrier_fcn_verification
 
 import setup_paths  # noqa: F401

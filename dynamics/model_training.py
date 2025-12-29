@@ -1,5 +1,5 @@
 import torch
-from utils.sampling import generate_training_data, sample_batch
+from barrier_utils.sampling import generate_training_data, sample_batch
 
 import pickle
 

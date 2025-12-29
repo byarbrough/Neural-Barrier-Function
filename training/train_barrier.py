@@ -1,8 +1,8 @@
 import torch
 import torch.optim as optim
 
-from utils.sampling import generate_training_data
-from utils.sampling import uniform_random_sample_from_Polyhedron
+from barrier_utils.sampling import generate_training_data
+from barrier_utils.sampling import uniform_random_sample_from_Polyhedron
 
 import pickle
 import numpy as np
@@ -13,7 +13,7 @@ import copy
 from pympc.geometry.polyhedron import Polyhedron
 from tqdm import tqdm
 import time
-from utils.training import setup_relu, extract_relu_structure
+from barrier_utils.training import setup_relu, extract_relu_structure
 
 import setup_paths  # noqa: F401
 import config as arguments

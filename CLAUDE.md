@@ -67,7 +67,7 @@ python main_train_quad_mip.py --config quadrotor_6D.yaml --seed 0 --method fine-
 - **dynamics/**: Dynamical system models and NN dynamics
 - **training/**: Training logic for barrier functions
 - **verification/**: Verification backends (MIP and BAB)
-- **utils/**: Sampling, model transformations, training utilities
+- **barrier_utils/**: Sampling, model transformations, training utilities (named to avoid conflict with alpha-beta-CROWN's utils module)
 - **pympc/**: MPC utilities (control, dynamics, geometry, optimization)
 - **examples/**: Runnable experiments (double integrator, quadrotor)
 - **setup_paths.py**: Path configuration for imports

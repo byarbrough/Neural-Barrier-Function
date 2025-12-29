@@ -9,7 +9,7 @@ from verification.optimization import add_gurobi_constr_for_MLP
 
 import numpy as np
 from pympc.geometry.polyhedron import Polyhedron
-from utils.sampling import uniform_random_sample_from_Polyhedron
+from barrier_utils.sampling import uniform_random_sample_from_Polyhedron
 
 import gurobipy as gp
 
