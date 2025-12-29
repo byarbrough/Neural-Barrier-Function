@@ -118,15 +118,14 @@ def bab_verification(nn_model, data_lb, data_ub, C, rhs, yaml_file_path=None):
     rhs_np = rhs.cpu().numpy() if torch.is_tensor(rhs) else rhs
 
     # Create output spec clauses - each row of C is an independent OR clause
-    # Format: list of lists of (C_tensor, rhs_tensor) tuples
-    # Outer list = OR (disjunction), inner list = AND (conjunction)
-    # For barrier verification, each constraint is independently verified (OR semantics)
+    # Format: flat list of (C_tensor, rhs_tensor) tuples
+    # The API's normalize() detects this format (first element is tensor tuple of length 2)
+    # and automatically treats each tuple as an OR clause
     clauses = []
     for i in range(C_np.shape[0]):
         c_row = torch.tensor(C_np[i : i + 1], dtype=torch.float32)
         rhs_val = torch.tensor([rhs_np[i].item()], dtype=torch.float32)
-        # Each constraint is wrapped in its own list for proper OR semantics
-        clauses.append([(c_row, rhs_val)])
+        clauses.append((c_row, rhs_val))
 
     # Build verification spec
     spec = VerificationSpec.build_from_input_bounds(
