@@ -2,6 +2,7 @@
 Configuration module for barrier function verification.
 Extends alpha-beta-CROWN's ConfigHandler with barrier-specific arguments.
 """
+
 # Setup paths first
 import setup_paths  # noqa: F401
 
@@ -12,4 +13,4 @@ from . import barrier_config
 Config = barrier_config.Config
 Globals = barrier_config.Globals
 
-__all__ = ['Config', 'Globals']
+__all__ = ["Config", "Globals"]

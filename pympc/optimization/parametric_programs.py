@@ -5,7 +5,11 @@ from copy import copy
 
 # internal inputs
 from pympc.geometry.polyhedron import Polyhedron
-from pympc.optimization.programs import quadratic_program, mixed_integer_quadratic_program
+from pympc.optimization.programs import (
+    quadratic_program,
+    mixed_integer_quadratic_program,
+)
+
 
 class MultiParametricQuadraticProgram(object):
     """
@@ -33,7 +37,7 @@ class MultiParametricQuadraticProgram(object):
             Right-hand side of the constraints.
         """
         self.H = H
-        self.Huu_inv = np.linalg.inv(self.H['uu'])
+        self.Huu_inv = np.linalg.inv(self.H["uu"])
         self.f = f
         self.g = g
         self.A = A
@@ -68,50 +72,50 @@ class MultiParametricQuadraticProgram(object):
         """
 
         # ensure that LICQ will hold
-        Aua = self.A['u'][active_set]
-        if len(active_set) > 0  and np.linalg.matrix_rank(Aua) < Aua.shape[0]:
+        Aua = self.A["u"][active_set]
+        if len(active_set) > 0 and np.linalg.matrix_rank(Aua) < Aua.shape[0]:
             return None
 
         # split active and inactive
-        inactive_set = [i for i in range(self.A['x'].shape[0]) if i not in active_set]
-        Aui = self.A['u'][inactive_set]
-        Axa = self.A['x'][active_set]
-        Axi = self.A['x'][inactive_set]
+        inactive_set = [i for i in range(self.A["x"].shape[0]) if i not in active_set]
+        Aui = self.A["u"][inactive_set]
+        Axa = self.A["x"][active_set]
+        Axi = self.A["x"][inactive_set]
         ba = self.b[active_set]
         bi = self.b[inactive_set]
 
         # multipliers
         M = np.linalg.inv(Aua.dot(self.Huu_inv).dot(Aua.T))
-        pax = M.dot(Axa - Aua.dot(self.Huu_inv).dot(self.H['ux']))
-        pa0 = - M.dot(ba + Aua.dot(self.Huu_inv).dot(self.f['u']))
-        px = np.zeros(self.A['x'].shape)
-        p0 = np.zeros(self.A['x'].shape[0])
+        pax = M.dot(Axa - Aua.dot(self.Huu_inv).dot(self.H["ux"]))
+        pa0 = -M.dot(ba + Aua.dot(self.Huu_inv).dot(self.f["u"]))
+        px = np.zeros(self.A["x"].shape)
+        p0 = np.zeros(self.A["x"].shape[0])
         px[active_set] = pax
         p0[active_set] = pa0
-        p = {'x': px, '0':p0}
+        p = {"x": px, "0": p0}
 
         # primary variables
-        ux = - self.Huu_inv.dot(self.H['ux'] + Aua.T.dot(pax))
-        u0 = - self.Huu_inv.dot(self.f['u'] + Aua.T.dot(pa0))
-        u = {'x':ux, '0':u0}
+        ux = -self.Huu_inv.dot(self.H["ux"] + Aua.T.dot(pax))
+        u0 = -self.Huu_inv.dot(self.f["u"] + Aua.T.dot(pa0))
+        u = {"x": ux, "0": u0}
 
         # critical region
-        Acr = np.vstack((
-            - pax,
-            Aui.dot(ux) + Axi
-            ))
-        bcr = np.concatenate((
-            pa0,
-            bi - Aui.dot(u0)
-            ))
+        Acr = np.vstack((-pax, Aui.dot(ux) + Axi))
+        bcr = np.concatenate((pa0, bi - Aui.dot(u0)))
         cr = Polyhedron(Acr, bcr)
         cr.normalize()
 
         # optimal value function V(x) = 1/2 x' Vxx x + Vx' x + V0
-        Vxx = ux.T.dot(self.H['uu']).dot(ux) + 2.*self.H['ux'].T.dot(ux) + self.H['xx']
-        Vx = (ux.T.dot(self.H['uu'].T) + self.H['ux'].T).dot(u0) + ux.T.dot(self.f['u']) + self.f['x']
-        V0 = .5*u0.dot(self.H['uu']).dot(u0) + self.f['u'].dot(u0) + self.g
-        V = {'xx':Vxx, 'x':Vx, '0':V0}
+        Vxx = (
+            ux.T.dot(self.H["uu"]).dot(ux) + 2.0 * self.H["ux"].T.dot(ux) + self.H["xx"]
+        )
+        Vx = (
+            (ux.T.dot(self.H["uu"].T) + self.H["ux"].T).dot(u0)
+            + ux.T.dot(self.f["u"])
+            + self.f["x"]
+        )
+        V0 = 0.5 * u0.dot(self.H["uu"]).dot(u0) + self.f["u"].dot(u0) + self.g
+        V = {"xx": Vxx, "x": Vx, "0": V0}
 
         return CriticalRegion(active_set, u, p, V, cr)
 
@@ -139,18 +143,18 @@ class MultiParametricQuadraticProgram(object):
             if cr is not None and cr.contains(x):
                 return cr
             elif verbose:
-                print('Wrong active-set guess:'),
+                (print("Wrong active-set guess:"),)
 
         # otherwise solve the QP to get the active set
         sol = self.solve(x)
-        if sol['active_set'] is None:
+        if sol["active_set"] is None:
             if verbose:
-                print('unfeasible sample.')
+                print("unfeasible sample.")
             return None
         if verbose:
-            print('feasible sample with active set ' + str(sol['active_set']) + '.')
+            print("feasible sample with active set " + str(sol["active_set"]) + ".")
 
-        return self.explicit_solve_given_active_set(sol['active_set'])
+        return self.explicit_solve_given_active_set(sol["active_set"])
 
     def solve(self, x):
         """
@@ -168,17 +172,17 @@ class MultiParametricQuadraticProgram(object):
         """
 
         # fix cost function and constraints
-        f = self.H['ux'].dot(x) + self.f['u']
-        b = self.b - self.A['x'].dot(x)
-        sol = quadratic_program(self.H['uu'], f, self.A['u'], b)
+        f = self.H["ux"].dot(x) + self.f["u"]
+        b = self.b - self.A["x"].dot(x)
+        sol = quadratic_program(self.H["uu"], f, self.A["u"], b)
 
         # "lift" optimal value function
-        if sol['min'] is not None:
-            sol['min'] += .5 * x.dot(self.H['xx']).dot(x) + self.f['x'].dot(x) + self.g
+        if sol["min"] is not None:
+            sol["min"] += 0.5 * x.dot(self.H["xx"]).dot(x) + self.f["x"].dot(x) + self.g
 
         return sol
 
-    def explicit_solve(self, step_size=1.e-5, verbose=False):
+    def explicit_solve(self, step_size=1.0e-5, verbose=False):
         """
         Returns the explicit solution of the mpQP.
         It assumes that the facet-to-facet property holds (i.e. each facet of a critical region is shared with another single critical region).
@@ -201,26 +205,28 @@ class MultiParametricQuadraticProgram(object):
         """
 
         # start from the origin and guess its active set
-        x = np.zeros(self.f['x'].size)
+        x = np.zeros(self.f["x"].size)
         active_set_guess = []
         x_buffer = [(x, active_set_guess)]
         crs_found = []
 
         # loop until the are no points left
         while len(x_buffer) > 0:
-
             # discard points that have been already covered
-            x_buffer = [x for x in x_buffer if not any([cr.contains(x[0]) for cr in crs_found])]
+            x_buffer = [
+                x for x in x_buffer if not any([cr.contains(x[0]) for cr in crs_found])
+            ]
             if len(x_buffer) == 0:
                 break
 
             # get critical region for the first point in the buffer
-            cr = self.explicit_solve_given_point(x_buffer[0][0], x_buffer[0][1], verbose)
+            cr = self.explicit_solve_given_point(
+                x_buffer[0][0], x_buffer[0][1], verbose
+            )
             del x_buffer[0]
 
             # if feasible
             if cr is not None:
-
                 # step outside each minimal facet
                 for i in cr.minimal_facets():
                     x = cr.facet_center(i) + step_size * cr.A[i]
@@ -234,9 +240,9 @@ class MultiParametricQuadraticProgram(object):
                 # if feasible, add the the list of critical regions
                 crs_found.append(cr)
                 if verbose:
-                    print('CR found, active set: ' + str(cr.active_set) + '.')
+                    print("CR found, active set: " + str(cr.active_set) + ".")
         if verbose:
-            print('Explicit solution found, CRs are: ' + str(len(crs_found)) + '.')
+            print("Explicit solution found, CRs are: " + str(len(crs_found)) + ".")
 
         return ExplicitSolution(crs_found)
 
@@ -251,13 +257,11 @@ class MultiParametricQuadraticProgram(object):
         """
 
         # constraint set
-        C = Polyhedron(
-            np.hstack((self.A['x'], self.A['u'])),
-            self.b
-            )
+        C = Polyhedron(np.hstack((self.A["x"], self.A["u"])), self.b)
 
         # feasible set
-        return C.project_to(range(self.A['x'].shape[1]))
+        return C.project_to(range(self.A["x"].shape[1]))
+
 
 class CriticalRegion(object):
     """
@@ -339,10 +343,7 @@ class CriticalRegion(object):
 
         # add an equality to the original polyhedron
         facet = copy(self.polyhedron)
-        facet.add_equality(
-            facet.A[i:i+1, :],
-            facet.b[i:i+1]
-            )
+        facet.add_equality(facet.A[i : i + 1, :], facet.b[i : i + 1])
 
         return facet.center
 
@@ -361,7 +362,7 @@ class CriticalRegion(object):
             Primal optimizer at the given point.
         """
 
-        return self._u['x'].dot(x) + self._u['0']
+        return self._u["x"].dot(x) + self._u["0"]
 
     def p(self, x):
         """
@@ -378,7 +379,7 @@ class CriticalRegion(object):
             Dual optimizer at the given point.
         """
 
-        return self._p['x'].dot(x) + self._p['0']
+        return self._p["x"].dot(x) + self._p["0"]
 
     def V(self, x):
         """
@@ -395,7 +396,7 @@ class CriticalRegion(object):
             Optimal value function at the given point.
         """
 
-        V = .5*x.dot(self._V['xx']).dot(x) + self._V['x'].dot(x) + self._V['0']
+        V = 0.5 * x.dot(self._V["xx"]).dot(x) + self._V["x"].dot(x) + self._V["0"]
 
         return V
 
@@ -422,6 +423,7 @@ class CriticalRegion(object):
             Right hand side of self.polyhedron.
         """
         return self.polyhedron.b
+
 
 class ExplicitSolution(object):
     """
@@ -531,6 +533,7 @@ class ExplicitSolution(object):
         # return None if not covered
         return None
 
+
 class MultiParametricMixedIntegerQuadraticProgram(object):
     """
     Multiparametric Mixed Integer Quadratic Program (mpMIQP) in the form that comes out from the MPC problem for a piecewise affine system, i.e.
@@ -581,45 +584,28 @@ class MultiParametricMixedIntegerQuadraticProgram(object):
         """
 
         # MIQP dimensions
-        nu = self.A['u'].shape[1]
-        nz = self.A['z'].shape[1]
-        nd = self.A['d'].shape[1]
+        nu = self.A["u"].shape[1]
+        nz = self.A["z"].shape[1]
+        nd = self.A["d"].shape[1]
         nc = nu + nz
 
         # put MIQP in standard form
-        H = block_diag(
-            self.H['uu'],
-            self.H['zz'],
-            np.zeros((nd, nd))
-            )
-        f = np.concatenate((
-            np.zeros(nu),
-            self.H['zx'].dot(x),
-            np.zeros(nd)
-            ))
-        A = np.hstack((
-            self.A['u'],
-            self.A['z'],
-            self.A['d']
-            ))
-        b = self.b - self.A['x'].dot(x)
+        H = block_diag(self.H["uu"], self.H["zz"], np.zeros((nd, nd)))
+        f = np.concatenate((np.zeros(nu), self.H["zx"].dot(x), np.zeros(nd)))
+        A = np.hstack((self.A["u"], self.A["z"], self.A["d"]))
+        b = self.b - self.A["x"].dot(x)
 
         # solve MIQP
         sol_sf = mixed_integer_quadratic_program(nc, H, f, A, b)
 
         # reshape solution
-        sol = {
-            'min': sol_sf['min'],
-            'u': None,
-            'z': None,
-            'd': None
-            }
+        sol = {"min": sol_sf["min"], "u": None, "z": None, "d": None}
 
         # if feasible lift the cost function with the offset term
-        if sol['min'] is not None:
-            sol['min'] += .5*x.dot(self.H['xx']).dot(x)
-            sol['u'] = sol_sf['argmin'][:nu]
-            sol['z'] = sol_sf['argmin'][nu:nu+nz]
-            sol['d'] = sol_sf['argmin'][nu+nz:]
+        if sol["min"] is not None:
+            sol["min"] += 0.5 * x.dot(self.H["xx"]).dot(x)
+            sol["u"] = sol_sf["argmin"][:nu]
+            sol["z"] = sol_sf["argmin"][nu : nu + nz]
+            sol["d"] = sol_sf["argmin"][nu + nz :]
 
         return sol

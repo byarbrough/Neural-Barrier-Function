@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from verification.nn_verification import find_preactivation_bounds, output_Lp_bounds_LiRPA
+from verification.nn_verification import (
+    find_preactivation_bounds,
+)
 from verification.optimization import add_gurobi_constr_for_MLP
 
 import numpy as np
@@ -10,6 +12,7 @@ from pympc.geometry.polyhedron import Polyhedron
 from utils.sampling import uniform_random_sample_from_Polyhedron
 
 import gurobipy as gp
+
 
 class Barrier_Fcn(nn.Module):
     def __init__(self, net, domain):
@@ -31,7 +34,7 @@ class Barrier_Fcn(nn.Module):
 
     def forward(self, x):
         return self.net(x)
-    
+
     @property
     def device(self):
         return next(self.net.parameters()).device
@@ -54,13 +57,13 @@ class Barrier_Fcn(nn.Module):
 
         pre_act_bounds, output_bounds = find_preactivation_bounds(net, domain)
 
-        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
-        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
+        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
+        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
         return pre_act_bounds, output_bounds
 
     def evaluate_basis(self, x):
         return self.basis_net(x)
-    
+
     def initial_set_loss(self, x0_samples, leaky_relu=False):
         N0 = x0_samples.size(0)
         x0_samples = x0_samples.to(self.device)
@@ -73,28 +76,48 @@ class Barrier_Fcn(nn.Module):
         Nu = xu_samples.size(0)
         xu_samples = xu_samples.to(self.device)
         if leaky_relu:
-            return F.leaky_relu(-self.net(xu_samples)[:, self.unsafe_index]).sum()/Nu
+            return F.leaky_relu(-self.net(xu_samples)[:, self.unsafe_index]).sum() / Nu
         else:
-            return F.relu(-self.net(xu_samples)[:, self.unsafe_index]).sum()/Nu
+            return F.relu(-self.net(xu_samples)[:, self.unsafe_index]).sum() / Nu
 
     def decrease_loss(self, x_samples, xn_samples, leaky_relu=False):
         N = x_samples.size(0)
         x_samples, xn_samples = x_samples.to(self.device), xn_samples.to(self.device)
         if leaky_relu:
-            return F.leaky_relu(self.net(xn_samples) - self.net(x_samples) @ self.A.T).sum() / N
+            return (
+                F.leaky_relu(
+                    self.net(xn_samples) - self.net(x_samples) @ self.A.T
+                ).sum()
+                / N
+            )
         else:
-            return F.relu(self.net(xn_samples) - self.net(x_samples) @ self.A.T).sum() / N
+            return (
+                F.relu(self.net(xn_samples) - self.net(x_samples) @ self.A.T).sum() / N
+            )
 
-    def loss(self, x0_samples, xu_samples, x_samples, xn_samples, l1_lambda=None, leaky_relu=False):
-        cost = self.initial_set_loss(x0_samples, leaky_relu) + self.unsafe_set_loss(xu_samples, leaky_relu) + \
-               self.decrease_loss(x_samples, xn_samples, leaky_relu)
+    def loss(
+        self,
+        x0_samples,
+        xu_samples,
+        x_samples,
+        xn_samples,
+        l1_lambda=None,
+        leaky_relu=False,
+    ):
+        cost = (
+            self.initial_set_loss(x0_samples, leaky_relu)
+            + self.unsafe_set_loss(xu_samples, leaky_relu)
+            + self.decrease_loss(x_samples, xn_samples, leaky_relu)
+        )
 
         if l1_lambda is not None and l1_lambda > 1e-8:
             l1_norm = sum(p.abs().sum() for p in self.net.parameters())
-            cost = cost + l1_lambda*l1_norm
+            cost = cost + l1_lambda * l1_norm
         return cost
 
-    def add_gurobi_constr(self, gurobi_model, input_var, output_var, net=None, domain=None, mark = ''):
+    def add_gurobi_constr(
+        self, gurobi_model, input_var, output_var, net=None, domain=None, mark=""
+    ):
         # add the constraint output_var = B(input_var)
         if domain is not None:
             self.initialize_pre_act_bounds(domain, net)
@@ -111,18 +134,21 @@ class Barrier_Fcn(nn.Module):
 
         x = list()
         for i in range(nx):
-            x.append(gurobi_model.getVarByName(input_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(input_var + "[" + str(i) + "]"))
 
         y = list()
         for i in range(ny):
-            y.append(gurobi_model.getVarByName(output_var + '[' + str(i) + ']'))
+            y.append(gurobi_model.getVarByName(output_var + "[" + str(i) + "]"))
 
-        gurobi_model = add_gurobi_constr_for_MLP(gurobi_model, net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark)
+        gurobi_model = add_gurobi_constr_for_MLP(
+            gurobi_model, net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark
+        )
         gurobi_model.update()
         return gurobi_model
 
+
 class Polyhedral_Set:
-     # TODO: extend to union of polyhedra.
+    # TODO: extend to union of polyhedra.
     def __init__(self, A, b):
         # polytope defined by Ax <= b
         self.A = A
@@ -135,19 +161,23 @@ class Polyhedral_Set:
 
     def sample(self, N):
         samples = uniform_random_sample_from_Polyhedron(self.set, N)
-        return samples.astype('float32')
+        return samples.astype("float32")
 
-    def add_gurobi_constr(self, gurobi_model, input_var, mark = ''):
+    def add_gurobi_constr(self, gurobi_model, input_var, mark=""):
         x = list()
         for i in range(self.nx):
-            x.append(gurobi_model.getVarByName(input_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(input_var + "[" + str(i) + "]"))
 
         A = self.A
         b = self.b
 
-        gurobi_model.addConstrs( (A[i]@x <= b[i] for i in range(A.shape[0])), name = 'set_constr_step_' + mark)
+        gurobi_model.addConstrs(
+            (A[i] @ x <= b[i] for i in range(A.shape[0])),
+            name="set_constr_step_" + mark,
+        )
         gurobi_model.update()
         return gurobi_model
+
 
 class Controller(nn.Module):
     def __init__(self, net, domain, u_lb=None, u_ub=None):
@@ -210,33 +240,39 @@ class Controller(nn.Module):
         if domain is None:
             domain = self.domain
         pre_act_bounds, output_bounds = find_preactivation_bounds(self.net, domain)
-        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
-        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
+        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
+        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
         self.output_bounds = output_bounds
-        self.output_domain = Polyhedron.from_bounds(output_bounds['lb'], output_bounds['ub'])
+        self.output_domain = Polyhedron.from_bounds(
+            output_bounds["lb"], output_bounds["ub"]
+        )
 
         return pre_act_bounds, output_bounds
 
-    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark = ''):
+    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark=""):
         # TODO: the projection operation has not been modeled yet.
         if self.pre_act_lb is None or self.pre_act_ub is None:
             self.initialize_pre_act_bounds()
 
         x = list()
         for i in range(self.x_dim):
-            x.append(gurobi_model.getVarByName(input_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(input_var + "[" + str(i) + "]"))
 
         if self.u_lb is not None and self.u_ub is not None:
-            y = gurobi_model.addVars(self.u_dim, lb=-gp.GRB.INFINITY, name='u_med_'+str(mark))
+            y = gurobi_model.addVars(
+                self.u_dim, lb=-gp.GRB.INFINITY, name="u_med_" + str(mark)
+            )
             gurobi_model.update()
         else:
             y = list()
             for i in range(self.u_dim):
-                y.append(gurobi_model.getVarByName(output_var + '[' + str(i) + ']'))
+                y.append(gurobi_model.getVarByName(output_var + "[" + str(i) + "]"))
 
         nx, ny = self.x_dim, self.u_dim
 
-        gurobi_model = add_gurobi_constr_for_MLP(gurobi_model, self.net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark)
+        gurobi_model = add_gurobi_constr_for_MLP(
+            gurobi_model, self.net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark
+        )
 
         gurobi_model.update()
 
@@ -245,41 +281,77 @@ class Controller(nn.Module):
             u_lb, u_ub = self.u_lb.cpu().numpy(), self.u_ub.cpu().numpy()
 
             output_bounds = self.output_bounds
-            output_lb, output_ub = output_bounds['lb'], output_bounds['ub']
+            output_lb, output_ub = output_bounds["lb"], output_bounds["ub"]
 
             # extract the output variable
             u = list()
             for i in range(self.u_dim):
-                u.append(gurobi_model.getVarByName(output_var + '[' + str(i) + ']'))
+                u.append(gurobi_model.getVarByName(output_var + "[" + str(i) + "]"))
 
-            z_l = gurobi_model.addVars(self.u_dim, lb=-gp.GRB.INFINITY, name='z_l_'+str(mark))
-            t_l = gurobi_model.addVars(self.u_dim, name='t_l_' + str(mark), vtype=gp.GRB.BINARY)
+            z_l = gurobi_model.addVars(
+                self.u_dim, lb=-gp.GRB.INFINITY, name="z_l_" + str(mark)
+            )
+            t_l = gurobi_model.addVars(
+                self.u_dim, name="t_l_" + str(mark), vtype=gp.GRB.BINARY
+            )
             # z_u = gurobi_model.addVars(self.u_dim, lb=-gp.GRB.INFINITY, name='z_u_'+str(mark))
-            t_u = gurobi_model.addVars(self.u_dim, name='t_u_' + str(mark), vtype=gp.GRB.BINARY)
+            t_u = gurobi_model.addVars(
+                self.u_dim, name="t_u_" + str(mark), vtype=gp.GRB.BINARY
+            )
 
             # add constraints: z_l = max(y, u_lb)
             # equivalently we have: z_l >= y, z_l >= u_lb, z_l <= y + M*(1-t_l), z_l<=lb+M*t_l
 
             # find the big-M parameter
-            M_vec_lb = np.maximum(output_ub-u_lb, -output_lb+u_lb)
+            M_vec_lb = np.maximum(output_ub - u_lb, -output_lb + u_lb)
             assert np.all(M_vec_lb >= 0)
 
-            gurobi_model.addConstrs((z_l[i] >= y[i] for i in range(self.u_dim)), name='proj_lb_binary_1_'+str(mark))
-            gurobi_model.addConstrs((z_l[i] >= u_lb[i] for i in range(self.u_dim)), name='proj_lb_binary_2_'+str(mark))
-            gurobi_model.addConstrs((z_l[i] <= y[i] + M_vec_lb[i]*(1-t_l[i]) for i in range(self.u_dim)), name='proj_lb_binary_3_'+str(mark))
-            gurobi_model.addConstrs((z_l[i] <= u_lb[i] + M_vec_lb[i]*t_l[i] for i in range(self.u_dim)), name='proj_lb_binary_4_'+str(mark))
+            gurobi_model.addConstrs(
+                (z_l[i] >= y[i] for i in range(self.u_dim)),
+                name="proj_lb_binary_1_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (z_l[i] >= u_lb[i] for i in range(self.u_dim)),
+                name="proj_lb_binary_2_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (
+                    z_l[i] <= y[i] + M_vec_lb[i] * (1 - t_l[i])
+                    for i in range(self.u_dim)
+                ),
+                name="proj_lb_binary_3_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (z_l[i] <= u_lb[i] + M_vec_lb[i] * t_l[i] for i in range(self.u_dim)),
+                name="proj_lb_binary_4_" + str(mark),
+            )
 
             # add constraints: u = min(z_l, u_ub)
             # equivalently, we have: u <= z_l, u <= u_ub, u >= z_l - M*(1-t_u), u >= u_ub - M*t_u
 
             # find the big-M parameter
-            M_vec_ub = np.maximum(output_ub-u_ub, -output_lb+u_ub)
+            M_vec_ub = np.maximum(output_ub - u_ub, -output_lb + u_ub)
             assert np.all(M_vec_lb >= 0)
 
-            gurobi_model.addConstrs((u[i] <= z_l[i] for i in range(self.u_dim)), name='proj_ub_binary_1_'+str(mark))
-            gurobi_model.addConstrs((u[i] <= u_ub[i] for i in range(self.u_dim)), name='proj_ub_binary_2_'+str(mark))
-            gurobi_model.addConstrs((u[i] >= z_l[i] - M_vec_ub[i]*(1-t_u[i]) for i in range(self.u_dim)), name='proj_ub_binary_3_'+str(mark))
-            gurobi_model.addConstrs((u[i] >= u_ub[i] - M_vec_ub[i]*t_u[i] for i in range(self.u_dim)), name='proj_ub_binary_4_'+str(mark))
+            gurobi_model.addConstrs(
+                (u[i] <= z_l[i] for i in range(self.u_dim)),
+                name="proj_ub_binary_1_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (u[i] <= u_ub[i] for i in range(self.u_dim)),
+                name="proj_ub_binary_2_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (
+                    u[i] >= z_l[i] - M_vec_ub[i] * (1 - t_u[i])
+                    for i in range(self.u_dim)
+                ),
+                name="proj_ub_binary_3_" + str(mark),
+            )
+            gurobi_model.addConstrs(
+                (u[i] >= u_ub[i] - M_vec_ub[i] * t_u[i] for i in range(self.u_dim)),
+                name="proj_ub_binary_4_" + str(mark),
+            )
 
             gurobi_model.update()
 
@@ -298,7 +370,7 @@ class OpenLoopDynamics(nn.Module):
 
         self.output_bounds = None
         self.output_domain = None
-    
+
     @property
     def device(self):
         return next(self.net.parameters()).device
@@ -310,32 +382,42 @@ class OpenLoopDynamics(nn.Module):
         if domain is None:
             domain = self.domain
         pre_act_bounds, output_bounds = find_preactivation_bounds(self.net, domain)
-        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
-        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
+        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
+        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
 
         self.output_bounds = output_bounds
-        self.output_domain = Polyhedron.from_bounds(output_bounds['lb'], output_bounds['ub'])
+        self.output_domain = Polyhedron.from_bounds(
+            output_bounds["lb"], output_bounds["ub"]
+        )
 
         return pre_act_bounds, output_bounds
 
-    def add_gurobi_constr(self, gurobi_model, x_var, u_var, xn_var, mark=''):
+    def add_gurobi_constr(self, gurobi_model, x_var, u_var, xn_var, mark=""):
         if self.pre_act_lb is None or self.pre_act_ub is None:
             self.initialize_pre_act_bounds()
 
         x = list()
         for i in range(self.x_dim):
-            x.append(gurobi_model.getVarByName(x_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(x_var + "[" + str(i) + "]"))
 
         u = list()
         for i in range(self.u_dim):
-            u.append(gurobi_model.getVarByName(u_var + '[' + str(i) + ']'))
+            u.append(gurobi_model.getVarByName(u_var + "[" + str(i) + "]"))
 
         y = list()
         for i in range(self.x_dim):
-            y.append(gurobi_model.getVarByName(xn_var + '[' + str(i) + ']'))
+            y.append(gurobi_model.getVarByName(xn_var + "[" + str(i) + "]"))
 
         aug_x = x + u
-        gurobi_model = add_gurobi_constr_for_MLP(gurobi_model, self.net, aug_x, y, self.pre_act_lb, self.pre_act_ub, mark=mark)
+        gurobi_model = add_gurobi_constr_for_MLP(
+            gurobi_model,
+            self.net,
+            aug_x,
+            y,
+            self.pre_act_lb,
+            self.pre_act_ub,
+            mark=mark,
+        )
         gurobi_model.update()
         return gurobi_model
 
@@ -366,48 +448,67 @@ class OpenLoopDynamicsResidual(nn.Module):
         if domain is None:
             domain = self.domain
         pre_act_bounds, output_bounds = find_preactivation_bounds(self.res_net, domain)
-        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
-        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
+        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
+        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
 
         self.output_bounds = output_bounds
-        self.output_domain = Polyhedron.from_bounds(output_bounds['lb'], output_bounds['ub'])
+        self.output_domain = Polyhedron.from_bounds(
+            output_bounds["lb"], output_bounds["ub"]
+        )
 
         return pre_act_bounds, output_bounds
 
-    def add_gurobi_constr(self, gurobi_model, x_var, u_var, xn_var, mark=''):
+    def add_gurobi_constr(self, gurobi_model, x_var, u_var, xn_var, mark=""):
         if self.pre_act_lb is None or self.pre_act_ub is None:
             self.initialize_pre_act_bounds()
 
         x = list()
         for i in range(self.x_dim):
-            x.append(gurobi_model.getVarByName(x_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(x_var + "[" + str(i) + "]"))
 
         u = list()
         for i in range(self.u_dim):
-            u.append(gurobi_model.getVarByName(u_var + '[' + str(i) + ']'))
+            u.append(gurobi_model.getVarByName(u_var + "[" + str(i) + "]"))
 
         y = list()
         for i in range(self.x_dim):
-            y.append(gurobi_model.getVarByName(xn_var + '[' + str(i) + ']'))
+            y.append(gurobi_model.getVarByName(xn_var + "[" + str(i) + "]"))
 
-        res_dyn_output = 'r_0'
+        res_dyn_output = "r_0"
         res = gurobi_model.addVars(self.x_dim, lb=-gp.GRB.INFINITY, name=res_dyn_output)
         gurobi_model.update()
 
         aug_x = x + u
-        gurobi_model = add_gurobi_constr_for_MLP(gurobi_model, self.res_net, aug_x, res, self.pre_act_lb, self.pre_act_ub,
-                                                 mark=mark)
+        gurobi_model = add_gurobi_constr_for_MLP(
+            gurobi_model,
+            self.res_net,
+            aug_x,
+            res,
+            self.pre_act_lb,
+            self.pre_act_ub,
+            mark=mark,
+        )
 
         lin_weight = self.lin_layer.weight.data.detach().cpu().numpy()
         lin_bias = self.lin_layer.bias.data.detach().cpu().numpy()
 
         aug_x_dict = gp.tupledict([(i, k) for i, k in enumerate(aug_x)])
 
-        gurobi_model.addConstrs((y[i] == aug_x_dict.prod(dict(zip(range(lin_weight.shape[1]), lin_weight[i, :]))) + lin_bias[i]
-                                 for i in range(self.x_dim)), name='res_dyn_' + str(mark))
+        gurobi_model.addConstrs(
+            (
+                y[i]
+                == aug_x_dict.prod(
+                    dict(zip(range(lin_weight.shape[1]), lin_weight[i, :]))
+                )
+                + lin_bias[i]
+                for i in range(self.x_dim)
+            ),
+            name="res_dyn_" + str(mark),
+        )
         gurobi_model.update()
 
         return gurobi_model
+
 
 class ClosedLoopDynamics(nn.Module):
     def __init__(self, forward_dyn, controller):
@@ -452,14 +553,22 @@ class ClosedLoopDynamics(nn.Module):
         self.forward_dyn.initialize_pre_act_bounds()
         self.controller.initialize_pre_act_bounds()
 
-    def add_gurobi_constr(self, gurobi_model, x_var, xn_var, mark = ''):
+    def add_gurobi_constr(self, gurobi_model, x_var, xn_var, mark=""):
         # y = f(x, u), u = pi(x)
-        control_input_name = 'u_0'
+        control_input_name = "u_0"
         gurobi_model.addVars(self.u_dim, lb=-gp.GRB.INFINITY, name=control_input_name)
         gurobi_model.update()
 
-        gurobi_model = self.controller.add_gurobi_constr(gurobi_model, x_var, control_input_name, 'controller_' + str(mark))
-        gurobi_model = self.forward_dyn.add_gurobi_constr(gurobi_model, x_var, control_input_name, xn_var, mark = 'forward_dyn_' + str(mark))
+        gurobi_model = self.controller.add_gurobi_constr(
+            gurobi_model, x_var, control_input_name, "controller_" + str(mark)
+        )
+        gurobi_model = self.forward_dyn.add_gurobi_constr(
+            gurobi_model,
+            x_var,
+            control_input_name,
+            xn_var,
+            mark="forward_dyn_" + str(mark),
+        )
         gurobi_model.update()
 
         return gurobi_model
@@ -494,7 +603,7 @@ class Auto_Dynamics(nn.Module):
         loss = (err**2).sum(dim=-1).mean()
         if l1_lambda is not None:
             l1_norm = sum(p.abs().sum() for p in self.parameters())
-            loss = loss + l1_lambda*l1_norm
+            loss = loss + l1_lambda * l1_norm
 
         return loss
 
@@ -506,23 +615,25 @@ class Auto_Dynamics(nn.Module):
 
     def initialize_pre_act_bounds(self):
         pre_act_bounds, output_bounds = find_preactivation_bounds(self.net, self.domain)
-        self.pre_act_lb = [item['lb'] for item in pre_act_bounds]
-        self.pre_act_ub = [item['ub'] for item in pre_act_bounds]
+        self.pre_act_lb = [item["lb"] for item in pre_act_bounds]
+        self.pre_act_ub = [item["ub"] for item in pre_act_bounds]
         self.output_bounds = output_bounds
 
-        self.output_domain = Polyhedron.from_bounds(output_bounds['lb'], output_bounds['ub'])
+        self.output_domain = Polyhedron.from_bounds(
+            output_bounds["lb"], output_bounds["ub"]
+        )
         return pre_act_bounds, output_bounds
 
-    def set_pre_act_bounds_big_M(self, M = 100.0):
+    def set_pre_act_bounds_big_M(self, M=100.0):
         # using big-M to initialize the pre-activation bounds, mainly for debugging
         if self.pre_act_lb is None:
             self.initialize_pre_act_bounds()
 
-        pre_act_lb = [-M*np.ones(item.shape) for item in self.pre_act_lb]
-        pre_act_ub = [ M*np.ones(item.shape) for item in self.pre_act_ub]
+        pre_act_lb = [-M * np.ones(item.shape) for item in self.pre_act_lb]
+        pre_act_ub = [M * np.ones(item.shape) for item in self.pre_act_ub]
         self.pre_act_lb, self.pre_act_ub = pre_act_lb, pre_act_ub
 
-    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark = ''):
+    def add_gurobi_constr(self, gurobi_model, input_var, output_var, mark=""):
         # add constraints to the gurobi model to enforce the following constraints: output_var = NN(input_var)
         if self.pre_act_lb is None or self.pre_act_ub is None:
             self.initialize_pre_act_bounds()
@@ -532,13 +643,15 @@ class Auto_Dynamics(nn.Module):
 
         x = list()
         for i in range(nx):
-            x.append(gurobi_model.getVarByName(input_var + '[' + str(i) + ']'))
+            x.append(gurobi_model.getVarByName(input_var + "[" + str(i) + "]"))
 
         y = list()
         for i in range(ny):
-            y.append(gurobi_model.getVarByName(output_var + '[' + str(i) + ']'))
+            y.append(gurobi_model.getVarByName(output_var + "[" + str(i) + "]"))
 
-        gurobi_model = add_gurobi_constr_for_MLP(gurobi_model, self.net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark)
+        gurobi_model = add_gurobi_constr_for_MLP(
+            gurobi_model, self.net, x, y, self.pre_act_lb, self.pre_act_ub, mark=mark
+        )
 
         return gurobi_model
 
@@ -551,12 +664,15 @@ class NeuralNetwork(nn.Module):
         layers = []
         for keyEntry in stateDictionary:
             if "weight" in keyEntry:
-                layers.append(nn.Linear(stateDictionary[keyEntry].shape[1], stateDictionary[keyEntry].shape[0]))
+                layers.append(
+                    nn.Linear(
+                        stateDictionary[keyEntry].shape[1],
+                        stateDictionary[keyEntry].shape[0],
+                    )
+                )
                 layers.append(nn.ReLU())
         layers.pop()
-        self.Linear = nn.Sequential(
-            *layers
-        )
+        self.Linear = nn.Sequential(*layers)
         self.rotation = nn.Identity()
         self.load_state_dict(stateDictionary)
 
@@ -582,4 +698,3 @@ class NeuralNetwork(nn.Module):
         for i in range(self.repetition):
             x = x @ self.A.T + self.Linear(x) @ self.B.T + self.c
         return x
-

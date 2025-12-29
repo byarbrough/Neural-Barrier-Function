@@ -2,6 +2,7 @@
 import numpy as np
 import gurobipy as grb
 
+
 def linear_program(f, A, b, C=None, d=None, **kwargs):
     """
     Solves the linear program min_x f^T x s.t. A x <= b, C x = d.
@@ -42,7 +43,7 @@ def linear_program(f, A, b, C=None, d=None, **kwargs):
     model = _build_model(f=f, A=A, b=b, C=C, d=d)
 
     # set the parameters
-    model.setParam('OutputFlag', 0)
+    model.setParam("OutputFlag", 0)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
     # run the optimization
@@ -50,14 +51,19 @@ def linear_program(f, A, b, C=None, d=None, **kwargs):
 
     # return result
     sol = _reorganize_solution(model, A, C)
-    
+
     # get active set
     if model.status == grb.GRB.Status.OPTIMAL:
-        sol['active_set'] = [i for i in range(A.shape[0]) if model.getConstrByName('ineq_'+str(i)).getAttr('CBasis') == -1]
+        sol["active_set"] = [
+            i
+            for i in range(A.shape[0])
+            if model.getConstrByName("ineq_" + str(i)).getAttr("CBasis") == -1
+        ]
 
     return sol
 
-def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-5, **kwargs):
+
+def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-5, **kwargs):
     """
     Solves the strictly convex (H > 0) quadratic program min .5 x' H x + f' x s.t. A x <= b, C x  = d.
 
@@ -101,8 +107,10 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-5, **kwargs):
     model = _build_model(H=H, f=f, A=A, b=b, C=C, d=d)
 
     # parameters
-    model.setParam('OutputFlag', 0)
-    model.setParam('BarConvTol', 1.e-10) # with the default value (1e-8) inactive multipliers can get values such as 5e-4, setting this to 1e-10 they generally are lower than 2e-6 (note that in the following the active set is retrieved looking at the numeric values of the multipliers!)
+    model.setParam("OutputFlag", 0)
+    model.setParam(
+        "BarConvTol", 1.0e-10
+    )  # with the default value (1e-8) inactive multipliers can get values such as 5e-4, setting this to 1e-10 they generally are lower than 2e-6 (note that in the following the active set is retrieved looking at the numeric values of the multipliers!)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
     # run the optimization
@@ -113,9 +121,10 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-5, **kwargs):
 
     # compute active set
     if model.status == grb.GRB.Status.OPTIMAL:
-        sol['active_set'] = np.where(sol['multiplier_inequality'] > tol)[0].tolist()
+        sol["active_set"] = np.where(sol["multiplier_inequality"] > tol)[0].tolist()
 
     return sol
+
 
 def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
     """
@@ -155,11 +164,11 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
     # initialize model
     model = _build_model(H=H, f=f, A=A, b=b, C=C, d=d)
     model.update()
-    [xi.setAttr('vtype', grb.GRB.BINARY) for xi in model.getVars()[nc:]]
+    [xi.setAttr("vtype", grb.GRB.BINARY) for xi in model.getVars()[nc:]]
     model.update()
 
     # parameters
-    model.setParam('OutputFlag', 0)
+    model.setParam("OutputFlag", 0)
     [model.setParam(parameter, value) for parameter, value in kwargs.items()]
 
     # run the optimization
@@ -169,6 +178,7 @@ def mixed_integer_quadratic_program(nc, H, f, A, b, C=None, d=None, **kwargs):
     sol = _reorganize_solution(model, A, C, continuous=False)
 
     return sol
+
 
 def _build_model(H=None, f=None, A=None, b=None, C=None, d=None):
     """
@@ -188,22 +198,22 @@ def _build_model(H=None, f=None, A=None, b=None, C=None, d=None):
     # initialize model
     model = grb.Model()
     n_x = f.size
-    x = model.addVars(n_x, lb=[-grb.GRB.INFINITY]*n_x)
+    x = model.addVars(n_x, lb=[-grb.GRB.INFINITY] * n_x)
 
     # linear inequalities
     for i, expr in enumerate(linear_expression(A, -b, x)):
-        model.addConstr(expr <= 0., name='ineq_'+str(i))
+        model.addConstr(expr <= 0.0, name="ineq_" + str(i))
 
     # linear equalities
     if C is not None and d is not None:
         for i, expr in enumerate(linear_expression(C, -d, x)):
-            model.addConstr(expr == 0., name='eq_'+str(i))
+            model.addConstr(expr == 0.0, name="eq_" + str(i))
 
     # cost function
     if H is not None:
         cost = grb.QuadExpr()
         expr = quadratic_expression(H, x)
-        cost.add(.5 * expr)
+        cost.add(0.5 * expr)
     else:
         cost = grb.LinExpr()
     f = f.reshape(1, f.size)
@@ -212,6 +222,7 @@ def _build_model(H=None, f=None, A=None, b=None, C=None, d=None):
     model.setObjective(cost)
 
     return model
+
 
 def _reorganize_solution(model, A, C, continuous=True):
     """
@@ -235,29 +246,39 @@ def _reorganize_solution(model, A, C, continuous=True):
     """
 
     # intialize solution
-    sol = {'min': None,'argmin': None}
+    sol = {"min": None, "argmin": None}
     if continuous:
-        sol['active_set'] = None
-        sol['multiplier_inequality'] = None
-        sol['multiplier_equality'] = None
+        sol["active_set"] = None
+        sol["multiplier_inequality"] = None
+        sol["multiplier_equality"] = None
 
     # if optimal solution found
     if model.status == grb.GRB.Status.OPTIMAL:
-
         # primal solution
         x = model.getVars()
-        sol['min'] = model.objVal
-        sol['argmin'] = np.array(model.getAttr('x'))
+        sol["min"] = model.objVal
+        sol["argmin"] = np.array(model.getAttr("x"))
 
         # dual solution
         if continuous:
-            sol['multiplier_inequality'] = np.array([-model.getConstrByName('ineq_'+str(i)).getAttr('Pi') for i in range(A.shape[0])])
+            sol["multiplier_inequality"] = np.array(
+                [
+                    -model.getConstrByName("ineq_" + str(i)).getAttr("Pi")
+                    for i in range(A.shape[0])
+                ]
+            )
             if C is not None and C.shape[0] > 0:
-                sol['multiplier_equality'] = np.array([-model.getConstrByName('eq_'+str(i)).getAttr('Pi') for i in range(C.shape[0])])
+                sol["multiplier_equality"] = np.array(
+                    [
+                        -model.getConstrByName("eq_" + str(i)).getAttr("Pi")
+                        for i in range(C.shape[0])
+                    ]
+                )
 
     return sol
 
-def linear_expression(A, b, x, tol=1.e-9):
+
+def linear_expression(A, b, x, tol=1.0e-9):
     """
     Generates a list of Gurobi linear expressions A_i x + b_i (one element per row of A).
 
@@ -279,14 +300,22 @@ def linear_expression(A, b, x, tol=1.e-9):
     """
 
     # linear term (explicitly state that it is a LinExpr since it can be that A[i] = 0)
-    exprs = [grb.LinExpr(sum([A[i,j]*x[j] for j in range(A.shape[1]) if np.abs(A[i,j]) > tol])) for i in range(A.shape[0])]
+    exprs = [
+        grb.LinExpr(
+            sum([A[i, j] * x[j] for j in range(A.shape[1]) if np.abs(A[i, j]) > tol])
+        )
+        for i in range(A.shape[0])
+    ]
 
     # offset term
-    exprs = [expr+b[i] if np.abs(b[i]) > tol else expr for i, expr in enumerate(exprs)]
+    exprs = [
+        expr + b[i] if np.abs(b[i]) > tol else expr for i, expr in enumerate(exprs)
+    ]
 
     return exprs
 
-def quadratic_expression(H, x, tol=1.e-9):
+
+def quadratic_expression(H, x, tol=1.0e-9):
     """
     Generates a Gurobi quadratic expressions x' H x.
 
@@ -305,4 +334,6 @@ def quadratic_expression(H, x, tol=1.e-9):
         Quadratic expressions.
     """
 
-    return sum([x[i]*H[i,j]*x[j] for i, j in np.ndindex(H.shape) if np.abs(H[i,j]) > tol])
+    return sum(
+        [x[i] * H[i, j] * x[j] for i, j in np.ndindex(H.shape) if np.abs(H[i, j]) > tol]
+    )

@@ -2,6 +2,7 @@
 import numpy as np
 from scipy.optimize import nnls
 
+
 def pnnls(A, B, c):
     """
     Solves the Partial Non-Negative Least Squares problem min_{u, v} ||A v + B u - c||_2^2 s.t. v >= 0.
@@ -34,11 +35,12 @@ def pnnls(A, B, c):
 
     # solve nnls
     v, r = nnls(A_bar, b_bar)
-    u = - B_pinv.dot(A.dot(v) - c)
+    u = -B_pinv.dot(A.dot(v) - c)
 
     return v, u, r
 
-def linear_program(f, A, b, C=None, d=None, tol=1.e-7):
+
+def linear_program(f, A, b, C=None, d=None, tol=1.0e-7):
     """
     Solves the linear program min_x f^T x s.t. A x <= b, C x = d.
     Finds a partially nonnegative least squares solution to the KKT conditions of the LP.
@@ -88,7 +90,7 @@ def linear_program(f, A, b, C=None, d=None, tol=1.e-7):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError('missing C or d.')
+        raise ValueError("missing C or d.")
 
     # problem size
     n_ineq, n_x = A.shape
@@ -106,47 +108,46 @@ def linear_program(f, A, b, C=None, d=None, tol=1.e-7):
         bd = b
 
     # build and solve pnnls problem
-    A_pnnls = np.vstack((
-        np.concatenate((
-            bd,
-            np.zeros(n_ineq + 2*n_eq)
-            )),
-        np.hstack((
-            np.zeros((n_ineq + 2*n_eq, n_ineq + 2*n_eq)),
-            np.eye(n_ineq + 2*n_eq)
-            )),
-        np.hstack((
-            AC.T,
-            np.zeros((n_x, n_ineq + 2*n_eq))
-            ))
-        ))
+    A_pnnls = np.vstack(
+        (
+            np.concatenate((bd, np.zeros(n_ineq + 2 * n_eq))),
+            np.hstack(
+                (
+                    np.zeros((n_ineq + 2 * n_eq, n_ineq + 2 * n_eq)),
+                    np.eye(n_ineq + 2 * n_eq),
+                )
+            ),
+            np.hstack((AC.T, np.zeros((n_x, n_ineq + 2 * n_eq)))),
+        )
+    )
     B_pnnls = np.vstack((f, AC, np.zeros((n_x, n_x))))
     c_pnnls = np.concatenate((np.zeros(1), bd, -f))
     ys, x, r = pnnls(A_pnnls, B_pnnls, c_pnnls)
 
     # initialize output
     sol = {
-        'min': None,
-        'argmin': None,
-        'active_set': None,
-        'multiplier_inequality': None,
-        'multiplier_equality': None
+        "min": None,
+        "argmin": None,
+        "active_set": None,
+        "multiplier_inequality": None,
+        "multiplier_equality": None,
     }
 
     # fill solution if residual is almost zero
     if r < tol:
-        sol['argmin'] = x
-        sol['min'] = f.dot(sol['argmin'])
-        sol['multiplier_inequality'] = ys[:n_ineq]
-        sol['active_set'] = sorted(np.where(sol['multiplier_inequality'] > tol)[0])
+        sol["argmin"] = x
+        sol["min"] = f.dot(sol["argmin"])
+        sol["multiplier_inequality"] = ys[:n_ineq]
+        sol["active_set"] = sorted(np.where(sol["multiplier_inequality"] > tol)[0])
         if n_eq > 0:
-            mul_eq_pos = ys[n_ineq:n_ineq+n_eq]
-            mul_eq_neg = - ys[n_ineq+n_eq:n_ineq+2*n_eq]
-            sol['multiplier_equality'] = mul_eq_pos + mul_eq_neg
+            mul_eq_pos = ys[n_ineq : n_ineq + n_eq]
+            mul_eq_neg = -ys[n_ineq + n_eq : n_ineq + 2 * n_eq]
+            sol["multiplier_equality"] = mul_eq_pos + mul_eq_neg
 
     return sol
 
-def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-7):
+
+def quadratic_program(H, f, A, b, C=None, d=None, tol=1.0e-7):
     """
     Solves the strictly convex (H > 0) quadratic program min .5 x' H x + f' x s.t. A x <= b, C x  = d using nonnegative least squres.
     (See "Bemporad - A Quadratic Programming Algorithm Based on Nonnegative Least Squares With Applications to Embedded Model Predictive Control", Theorem 1.)
@@ -189,7 +190,7 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-7):
 
     # check equalities
     if (C is None) != (d is None):
-        raise ValueError('missing C or d.')
+        raise ValueError("missing C or d.")
 
     # problem size
     n_ineq, n_x = A.shape
@@ -213,29 +214,31 @@ def quadratic_program(H, f, A, b, C=None, d=None, tol=1.e-7):
     M = AC.dot(L_inv.T)
     m = bd + AC.dot(H_inv).dot(f)
     gamma = np.ones(1)
-    A_nnls = np.vstack((- M.T, - m))
+    A_nnls = np.vstack((-M.T, -m))
     b_nnls = np.concatenate((np.zeros(n_x), gamma))
     y, r = nnls(A_nnls, b_nnls)
 
     # initialize output
     sol = {
-        'min': None,
-        'argmin': None,
-        'active_set': None,
-        'multiplier_inequality': None,
-        'multiplier_equality': None
+        "min": None,
+        "argmin": None,
+        "active_set": None,
+        "multiplier_inequality": None,
+        "multiplier_equality": None,
     }
 
     # if feasibile
     if r > tol:
         lam = y / (gamma[0] + m.dot(y))
-        sol['multiplier_inequality'] = lam[:n_ineq]
-        sol['argmin'] = - H_inv.dot(f + AC.T.dot(lam))
-        sol['min'] = .5 * sol['argmin'].dot(H).dot(sol['argmin']) + f.dot(sol['argmin'])
-        sol['active_set'] = sorted(np.where(sol['multiplier_inequality'] > tol)[0])
+        sol["multiplier_inequality"] = lam[:n_ineq]
+        sol["argmin"] = -H_inv.dot(f + AC.T.dot(lam))
+        sol["min"] = 0.5 * sol["argmin"].dot(H).dot(sol["argmin"]) + f.dot(
+            sol["argmin"]
+        )
+        sol["active_set"] = sorted(np.where(sol["multiplier_inequality"] > tol)[0])
         if n_eq > 0:
-            mul_eq_pos = lam[n_ineq:n_ineq+n_eq]
-            mul_eq_neg = - lam[n_ineq+n_eq:n_ineq+2*n_eq]
-            sol['multiplier_equality'] = mul_eq_pos + mul_eq_neg
+            mul_eq_pos = lam[n_ineq : n_ineq + n_eq]
+            mul_eq_neg = -lam[n_ineq + n_eq : n_ineq + 2 * n_eq]
+            sol["multiplier_equality"] = mul_eq_pos + mul_eq_neg
 
     return sol

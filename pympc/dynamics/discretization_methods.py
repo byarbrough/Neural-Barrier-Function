@@ -5,6 +5,7 @@ from scipy.linalg import expm
 # internal imports
 from pympc.dynamics.utils import check_affine_system
 
+
 def explicit_euler(A, B, c, h):
     """
     Discretizes the continuous-time affine system dx/dt = A x + B u + c approximating x(t+1) with x(t) + h dx/dt(t).
@@ -34,11 +35,12 @@ def explicit_euler(A, B, c, h):
     check_affine_system(A, B, c, h)
 
     # discretize
-    A_d = A*h + np.eye(A.shape[0])
-    B_d = B*h
-    c_d = c*h
+    A_d = A * h + np.eye(A.shape[0])
+    B_d = B * h
+    c_d = c * h
 
     return A_d, B_d, c_d
+
 
 def zero_order_hold(A, B, c, h):
     """
@@ -90,15 +92,12 @@ def zero_order_hold(A, B, c, h):
     n_u = np.shape(B)[1]
 
     # zero order hold
-    M_c = np.vstack((
-        np.column_stack((A, B, c)),
-        np.zeros((n_u+1, n_x+n_u+1))
-        ))
+    M_c = np.vstack((np.column_stack((A, B, c)), np.zeros((n_u + 1, n_x + n_u + 1))))
     M_d = expm(M_c * h)
 
     # discrete time dynamics
     A_d = M_d[:n_x, :n_x]
-    B_d = M_d[:n_x, n_x:n_x+n_u]
-    c_d = M_d[:n_x, n_x+n_u]
+    B_d = M_d[:n_x, n_x : n_x + n_u]
+    c_d = M_d[:n_x, n_x + n_u]
 
     return A_d, B_d, c_d

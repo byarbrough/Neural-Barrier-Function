@@ -1,6 +1,6 @@
 # external imports
 import numpy as np
-from scipy.linalg import block_diag, solve_discrete_are
+from scipy.linalg import solve_discrete_are
 from copy import copy
 
 # internal imports
@@ -8,6 +8,7 @@ from pympc.geometry.polyhedron import Polyhedron
 from pympc.optimization.programs import linear_program
 from pympc.dynamics.discretization_methods import explicit_euler, zero_order_hold
 from pympc.dynamics.utils import check_affine_system
+
 
 class LinearSystem(object):
     """
@@ -115,13 +116,18 @@ class LinearSystem(object):
 
         # check controllability
         if not self.controllable:
-            raise ValueError('uncontrollable system, cannot solve Riccati equation.')
+            raise ValueError("uncontrollable system, cannot solve Riccati equation.")
 
         # cost to go
         P = solve_discrete_are(self.A, self.B, Q, R)
 
         # feedback
-        K = - np.linalg.inv(self.B.T.dot(P).dot(self.B)+R).dot(self.B.T).dot(P).dot(self.A)
+        K = (
+            -np.linalg.inv(self.B.T.dot(P).dot(self.B) + R)
+            .dot(self.B.T)
+            .dot(P)
+            .dot(self.A)
+        )
 
         return P, K
 
@@ -149,10 +155,7 @@ class LinearSystem(object):
         A_cl = self.A + self.B.dot(K)
 
         # state-space constraint set
-        X_cl = Polyhedron(
-            D.A[:,:self.nx] + D.A[:,self.nx:].dot(K),
-            D.b
-            )
+        X_cl = Polyhedron(D.A[:, : self.nx] + D.A[:, self.nx :].dot(K), D.b)
         O_inf = mcais(A_cl, X_cl, **kwargs)
 
         return O_inf
@@ -179,26 +182,27 @@ class LinearSystem(object):
         S = AffineSystem(self.A, self.B, c)
 
         # condense as if it was a pwa systems
-        A_bar, B_bar, _ = condense_pwa_system([S], [0]*N)
+        A_bar, B_bar, _ = condense_pwa_system([S], [0] * N)
 
         return A_bar, B_bar
 
     @property
     def controllable(self):
-
         # check if already computes
         if self._controllable is not None:
             return self._controllable
 
         # check controllability
         controllable = False
-        R = np.hstack([np.linalg.matrix_power(self.A, i).dot(self.B) for i in range(self.nx)])
+        R = np.hstack(
+            [np.linalg.matrix_power(self.A, i).dot(self.B) for i in range(self.nx)]
+        )
         self._controllable = np.linalg.matrix_rank(R) == self.nx
 
         return self._controllable
 
     @staticmethod
-    def from_continuous(A, B, h, method='zero_order_hold'):
+    def from_continuous(A, B, h, method="zero_order_hold"):
         """
         Instantiates a discrete-time linear system starting from its continuous time representation.
 
@@ -221,12 +225,12 @@ class LinearSystem(object):
         c = np.zeros(A.shape[0])
 
         # discretize
-        if method == 'zero_order_hold':
+        if method == "zero_order_hold":
             A_d, B_d, _ = zero_order_hold(A, B, c, h)
-        elif method == 'explicit_euler':
+        elif method == "explicit_euler":
             A_d, B_d, _ = explicit_euler(A, B, c, h)
         else:
-            raise ValueError('unknown discretization method.')
+            raise ValueError("unknown discretization method.")
 
         return LinearSystem(A_d, B_d)
 
@@ -250,12 +254,12 @@ class LinearSystem(object):
 
         # check that offset setm is zero
         if not np.allclose(c, np.zeros(x.shape[0])):
-            raise ValueError('The given system has a non zero offset.')
+            raise ValueError("The given system has a non zero offset.")
 
         return LinearSystem(A, B)
 
     @staticmethod
-    def from_symbolic_continuous(x, u, x_dot, h, method='zero_order_hold'):
+    def from_symbolic_continuous(x, u, x_dot, h, method="zero_order_hold"):
         """
         Instatiates a LinearSystem starting from the symbolic value of the next state.
 
@@ -278,9 +282,10 @@ class LinearSystem(object):
 
         # check that offset setm is zero
         if not np.allclose(c, np.zeros(x.shape[0])):
-            raise ValueError('The given system has a non zero offset.')
+            raise ValueError("The given system has a non zero offset.")
 
         return LinearSystem.from_continuous(A, B, h, method)
+
 
 class AffineSystem(object):
     """
@@ -356,10 +361,10 @@ class AffineSystem(object):
         """
 
         # call the function for pwa systems with fake pwa system
-        return condense_pwa_system([self], [0]*N)
+        return condense_pwa_system([self], [0] * N)
 
     @staticmethod
-    def from_continuous(A, B, c, h, method='zero_order_hold'):
+    def from_continuous(A, B, c, h, method="zero_order_hold"):
         """
         Instantiates a discrete-time affine system starting from its continuous time representation.
 
@@ -381,12 +386,12 @@ class AffineSystem(object):
         check_affine_system(A, B, c, h)
 
         # discretize
-        if method == 'zero_order_hold':
+        if method == "zero_order_hold":
             A_d, B_d, c_d = zero_order_hold(A, B, c, h)
-        elif method == 'explicit_euler':
+        elif method == "explicit_euler":
             A_d, B_d, c_d = explicit_euler(A, B, c, h)
         else:
-            raise ValueError('unknown discretization method.')
+            raise ValueError("unknown discretization method.")
 
         return AffineSystem(A_d, B_d, c_d)
 
@@ -408,7 +413,7 @@ class AffineSystem(object):
         return AffineSystem(*get_state_transition_matrices(x, u, x_next))
 
     @staticmethod
-    def from_symbolic_continuous(x, u, x_dot, h, method='zero_order_hold'):
+    def from_symbolic_continuous(x, u, x_dot, h, method="zero_order_hold"):
         """
         Instatiates a LinearSystem starting from the symbolic value of the next state.
 
@@ -431,6 +436,7 @@ class AffineSystem(object):
 
         return AffineSystem.from_continuous(A, B, c, h, method)
 
+
 class PieceWiseAffineSystem(object):
     """
     Discrete-time piecewise-affine systems in the form x(t+1) = A_i x(t) + B_i u(t) + c_i if (x(t), u(t)) in D_i := {(x,u) | F_i x + G_i u <= h_i}.
@@ -450,28 +456,36 @@ class PieceWiseAffineSystem(object):
 
         # same number of systems and domains
         if len(affine_systems) != len(domains):
-            raise ValueError('the number of affine systems has to be equal to the number of domains.')
+            raise ValueError(
+                "the number of affine systems has to be equal to the number of domains."
+            )
 
         # same number of states for each system
         nx = set(S.nx for S in affine_systems)
         if len(nx) != 1:
-            raise ValueError('all the affine systems must have the same number of states.')
+            raise ValueError(
+                "all the affine systems must have the same number of states."
+            )
         self.nx = list(nx)[0]
 
         # same number of inputs for each system
         nu = set(S.nu for S in affine_systems)
         if len(nu) != 1:
-            raise ValueError('all the affine systems must have the same number of inputs.')
+            raise ValueError(
+                "all the affine systems must have the same number of inputs."
+            )
         self.nu = list(nu)[0]
 
         # same dimensions for each domain
         nxu = set(D.A.shape[1] for D in domains)
         if len(nxu) != 1:
-            raise ValueError('all the domains must have equal dimnesionality.')
+            raise ValueError("all the domains must have equal dimnesionality.")
 
         # dimension of each domain equal too number of states plus number of inputs
         if list(nxu)[0] != self.nx + self.nu:
-            raise ValueError('the domains and the affine systems must have coherent dimensions.')
+            raise ValueError(
+                "the domains and the affine systems must have coherent dimensions."
+            )
 
         # make instances of LinearSystem instances of AffineSystem
         for i, S in enumerate(affine_systems):
@@ -520,7 +534,13 @@ class PieceWiseAffineSystem(object):
 
             # if outside the domain, raise value error
             if mode is None:
-                raise ValueError('simulation reached an unfeasible point x = ' + str(x[t]) + ', u = ' + str(u[t]) + '.')
+                raise ValueError(
+                    "simulation reached an unfeasible point x = "
+                    + str(x[t])
+                    + ", u = "
+                    + str(u[t])
+                    + "."
+                )
 
             # compute next state and append values
             else:
@@ -555,7 +575,7 @@ class PieceWiseAffineSystem(object):
 
         return None
 
-    def is_well_posed(self, tol=1.e-7):
+    def is_well_posed(self, tol=1.0e-7):
         """
         Check if the domains of the pwa system are well posed (i.e. if the intersection of the interior of D_i with the interior of D_j is empty for all i and j != i).
 
@@ -572,7 +592,7 @@ class PieceWiseAffineSystem(object):
 
         # loop over al the combinations (avoiding to check twice)
         for i, Di in enumerate(self.domains):
-            for j in range(i+1, self.nm):
+            for j in range(i + 1, self.nm):
                 Dij = Di.intersection(self.domains[j])
 
                 # check the Chebyshev radius of the intersection
@@ -580,6 +600,7 @@ class PieceWiseAffineSystem(object):
                     return False
 
         return True
+
 
 def mcais(A, X, verbose=False):
     """
@@ -624,13 +645,19 @@ def mcais(A, X, verbose=False):
 
     # ensure convergence of the algorithm
     eig_max = np.max(np.absolute(np.linalg.eig(A)[0]))
-    if eig_max > 1.:
-        raise ValueError('unstable system, cannot derive maximal constraint-admissible set.')
+    if eig_max > 1.0:
+        raise ValueError(
+            "unstable system, cannot derive maximal constraint-admissible set."
+        )
     [nc, nx] = X.A.shape
     if not X.contains(np.zeros((nx, 1))):
-        raise ValueError('the origin is not contained in the constraint set, cannot derive maximal constraint-admissible set.')
+        raise ValueError(
+            "the origin is not contained in the constraint set, cannot derive maximal constraint-admissible set."
+        )
     if not X.bounded:
-        raise ValueError('unbounded constraint set, cannot derive maximal constraint-admissible set.')
+        raise ValueError(
+            "unbounded constraint set, cannot derive maximal constraint-admissible set."
+        )
 
     # initialize mcais
     O_inf = copy(X)
@@ -639,39 +666,38 @@ def mcais(A, X, verbose=False):
     t = 1
     convergence = False
     while not convergence:
-
         # solve one LP per facet
-        J = X.A.dot(np.linalg.matrix_power(A,t))
+        J = X.A.dot(np.linalg.matrix_power(A, t))
         residuals = []
         for i in range(X.A.shape[0]):
-            sol = linear_program(- J[i], O_inf.A, O_inf.b)
-            residuals.append(- sol['min'] - X.b[i])
+            sol = linear_program(-J[i], O_inf.A, O_inf.b)
+            residuals.append(-sol["min"] - X.b[i])
 
         # print status of the algorithm
         if verbose:
-            print('Time horizon: ' + str(t) + '.'),
-            print('Convergence index: ' + str(max(residuals)) + '.'),
-            print('Number of facets: ' + str(O_inf.A.shape[0]) + '.   \r'),
+            (print("Time horizon: " + str(t) + "."),)
+            (print("Convergence index: " + str(max(residuals)) + "."),)
+            (print("Number of facets: " + str(O_inf.A.shape[0]) + ".   \r"),)
 
         # convergence check
-        new_facets = [i for i, r in enumerate(residuals) if r > 0.]
+        new_facets = [i for i, r in enumerate(residuals) if r > 0.0]
         if len(new_facets) == 0:
             convergence = True
         else:
-
             # add (only non-redundant!) facets
             O_inf.add_inequality(J[new_facets], X.b[new_facets])
             t += 1
 
     # remove redundant facets
     if verbose:
-        print('\nMaximal constraint-admissible invariant set found.')
-        print('Removing redundant facets ...'),
+        print("\nMaximal constraint-admissible invariant set found.")
+        (print("Removing redundant facets ..."),)
     O_inf.remove_redundant_inequalities()
     if verbose:
-        print('minimal facets are ' + str(O_inf.A.shape[0]) + '.')
+        print("minimal facets are " + str(O_inf.A.shape[0]) + ".")
 
     return O_inf
+
 
 def condense_pwa_system(affine_systems, mode_sequence):
     """
@@ -713,20 +739,26 @@ def condense_pwa_system(affine_systems, mode_sequence):
     A_bar = np.vstack((np.eye(nx), A_bar))
 
     # forced evolution of the system
-    B_bar = np.zeros((nx*N,nu*N))
+    B_bar = np.zeros((nx * N, nu * N))
     for i in range(N):
         for j in range(i):
-            B_bar[nx*i:nx*(i+1), nu*j:nu*(j+1)] = productory(A_sequence[i:j:-1]).dot(B_sequence[j])
-        B_bar[nx*i:nx*(i+1), nu*i:nu*(i+1)] = B_sequence[i]
-    B_bar = np.vstack((np.zeros((nx, nu*N)), B_bar))
+            B_bar[nx * i : nx * (i + 1), nu * j : nu * (j + 1)] = productory(
+                A_sequence[i:j:-1]
+            ).dot(B_sequence[j])
+        B_bar[nx * i : nx * (i + 1), nu * i : nu * (i + 1)] = B_sequence[i]
+    B_bar = np.vstack((np.zeros((nx, nu * N)), B_bar))
 
     # evolution related to the offset term
     c_bar = np.concatenate((np.zeros(nx), c_sequence[0]))
     for i in range(1, N):
-        offset_i = sum([productory(A_sequence[i:j:-1]).dot(c_sequence[j]) for j in range(i)]) + c_sequence[i]
+        offset_i = (
+            sum([productory(A_sequence[i:j:-1]).dot(c_sequence[j]) for j in range(i)])
+            + c_sequence[i]
+        )
         c_bar = np.concatenate((c_bar, offset_i))
 
     return A_bar, B_bar, c_bar
+
 
 def productory(matrix_list):
     """
@@ -750,6 +782,7 @@ def productory(matrix_list):
 
     return A
 
+
 def get_state_transition_matrices(x, u, x_next):
     """
     Extracts from the symbolic expression of the state at the next time step the matrices A, B, and c.
@@ -768,8 +801,8 @@ def get_state_transition_matrices(x, u, x_next):
     B = np.array(x_next.jacobian(u)).astype(np.float64)
 
     # offset term
-    origin = {xi:0 for xi in x}
-    origin.update({ui:0 for ui in u})
+    origin = {xi: 0 for xi in x}
+    origin.update({ui: 0 for ui in u})
     c = np.array(x_next.subs(origin)).astype(np.float64).flatten()
-    
+
     return A, B, c

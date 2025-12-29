@@ -12,6 +12,7 @@ import matplotlib.patches as patches
 from pympc.optimization.programs import linear_program, quadratic_program
 from pympc.geometry.utils import nullspace_basis, plane_through_points
 
+
 class Polyhedron(object):
     """
     Polyhedron in the form {x in R^n | A x <= b, C x = d}.
@@ -35,20 +36,20 @@ class Polyhedron(object):
 
         # check and store inequalities
         if len(b.shape) > 1:
-            raise ValueError('b must be a one dimensional array.')
+            raise ValueError("b must be a one dimensional array.")
         self._same_number_rows(A, b)
         self.A = A
         self.b = b
 
         # check and store equalities
         if (C is None) != (d is None):
-            raise ValueError('missing C or d.')
+            raise ValueError("missing C or d.")
         if C is None:
             self.C = np.zeros((0, A.shape[1]))
             self.d = np.zeros(0)
         else:
             if len(d.shape) > 1:
-                raise ValueError('b must be a one dimensional array.')
+                raise ValueError("b must be a one dimensional array.")
             self._same_number_rows(C, d)
             self.C = C
             self.d = d
@@ -76,7 +77,7 @@ class Polyhedron(object):
 
         # check inequalities
         self._same_number_rows(A, b)
-    
+
         # reset attributes to None
         self._delete_attributes()
 
@@ -376,7 +377,7 @@ class Polyhedron(object):
         if E.shape[0] != f.size:
             raise ValueError("incoherent size of the inputs.")
 
-    def normalize(self, tol=1.e-7):
+    def normalize(self, tol=1.0e-7):
         """
         Normalizes the polyhedron dividing each row of A by its norm and each entry of b by the norm of the corresponding row of A.
 
@@ -390,17 +391,17 @@ class Polyhedron(object):
         for i in range(self.A.shape[0]):
             r = np.linalg.norm(self.A[i])
             if r > tol:
-                self.A[i] = self.A[i]/r
-                self.b[i] = self.b[i]/r
+                self.A[i] = self.A[i] / r
+                self.b[i] = self.b[i] / r
 
         # equalities
         for i in range(self.C.shape[0]):
             r = np.linalg.norm(self.C[i])
             if r > tol:
-                self.C[i] = self.C[i]/r
-                self.d[i] = self.d[i]/r
+                self.C[i] = self.C[i] / r
+                self.d[i] = self.d[i] / r
 
-    def minimal_facets(self, tol=1.e-7):
+    def minimal_facets(self, tol=1.0e-7):
         """
         Computes the indices of the facets that generate a minimal representation of the polyhedron solving an LP for each facet of the redundant representation.
         (See "Fukuda - Frequently asked questions in polyhedral computation" Sec.2.21.)
@@ -433,18 +434,17 @@ class Polyhedron(object):
 
         # check each facet
         for i in range(E.shape[0]):
-
             # remove redundant facets and relax ith inequality
             E_minimal = E[minimal_facets]
             f_relaxation = np.zeros(f.size)
-            f_relaxation[i] += 1.
+            f_relaxation[i] += 1.0
             f_relaxed = (f + f_relaxation)[minimal_facets]
 
             # solve linear program
             sol = linear_program(-E[i], E_minimal, f_relaxed)
 
             # remove redundant facets from the list
-            if  - sol['min'] - f[i] < tol:
+            if -sol["min"] - f[i] < tol:
                 minimal_facets.remove(i)
 
         return minimal_facets
@@ -459,7 +459,7 @@ class Polyhedron(object):
 
         # raise error if empty polyhedron
         if minimal_facets is None:
-            raise ValueError('empty polyhedron, cannot remove redundant inequalities.')
+            raise ValueError("empty polyhedron, cannot remove redundant inequalities.")
 
         # remove redundancy
         self.A = self.A[minimal_facets]
@@ -490,9 +490,9 @@ class Polyhedron(object):
         # change of variables
         N = nullspace_basis(self.C)
         if N.shape[1] == 0:
-            raise ValueError('equality constraints C x = d do not have a nullspace.')
+            raise ValueError("equality constraints C x = d do not have a nullspace.")
         if N.shape[1] != self.C.shape[1] - self.C.shape[0]:
-            raise ValueError('equality constraints C x = d are linearly dependent.')
+            raise ValueError("equality constraints C x = d are linearly dependent.")
         R = nullspace_basis(N.T)
 
         # new representation
@@ -521,7 +521,7 @@ class Polyhedron(object):
         H = np.eye(self.A.shape[1])
         f = np.zeros(self.A.shape[1])
         sol = quadratic_program(H, f, self.A, self.b, self.C, self.d)
-        self._empty = sol['min'] is None
+        self._empty = sol["min"] is None
 
         return self._empty
 
@@ -565,17 +565,17 @@ class Polyhedron(object):
         # check Stiemke's theorem of alternatives
         n, m = A.shape
         sol = linear_program(
-            np.ones(n), # f
-            -np.eye(n),      # A
-            -np.ones(n), # b
-            A.T,             # C
-            np.zeros(m) # d
-            )
-        self._bounded = sol['min'] is not None
+            np.ones(n),  # f
+            -np.eye(n),  # A
+            -np.ones(n),  # b
+            A.T,  # C
+            np.zeros(m),  # d
+        )
+        self._bounded = sol["min"] is not None
 
         return self._bounded
 
-    def contains(self, x, tol=1.e-7):
+    def contains(self, x, tol=1.0e-7):
         """
         Determines if the given point belongs to the polytope.
 
@@ -603,7 +603,7 @@ class Polyhedron(object):
 
         return contains_x
 
-    def is_included_in(self, P2, tol=1.e-7):
+    def is_included_in(self, P2, tol=1.0e-7):
         """
         Checks if the polyhedron P is a subset of the polyhedron P2 (returns True or False).
         For each halfspace H descibed a facet of P2, it solves an LP to check if the intersection of H with P1 is euqual to P1.
@@ -633,7 +633,7 @@ class Polyhedron(object):
         included = True
         for i in range(A2.shape[0]):
             sol = linear_program(-A2[i], P1.A, P1.b)
-            penetration = - sol['min'] - b2[i]
+            penetration = -sol["min"] - b2[i]
             if penetration > tol:
                 included = False
                 break
@@ -682,7 +682,7 @@ class Polyhedron(object):
             np.concatenate((self.b, P2.b)),
             block_diag(self.C, P2.C),
             np.concatenate((self.d, P2.d)),
-            )
+        )
 
     @property
     def radius(self):
@@ -754,8 +754,8 @@ class Polyhedron(object):
 
         # solve and reshape result
         sol = linear_program(f_lp, A_lp, b)
-        radius = sol['min']
-        center = sol['argmin']
+        radius = sol["min"]
+        center = sol["argmin"]
         if radius is not None:
             radius = -radius
             center = center[:-1]
@@ -788,7 +788,7 @@ class Polyhedron(object):
             return None
 
         # check full dimensionality
-        tol = 1.e-7
+        tol = 1.0e-7
         if self.radius < tol:
             return None
 
@@ -797,7 +797,7 @@ class Polyhedron(object):
             A, b, N, R = self._remove_equalities()
             T = np.hstack((N, R))
             center = np.linalg.inv(T).dot(self.center)
-            center = center[:N.shape[1]]
+            center = center[: N.shape[1]]
         else:
             A = self.A
             b = self.b
@@ -807,7 +807,7 @@ class Polyhedron(object):
         if A.shape[1] == 1:
             p = Polyhedron(A, b)
             p.remove_redundant_inequalities()
-            self._vertices = [np.array([p.b[i] / p.A[i,0]]) for i in [0,1]]
+            self._vertices = [np.array([p.b[i] / p.A[i, 0]]) for i in [0, 1]]
 
         # call qhull through scipy
         else:
@@ -840,11 +840,11 @@ class Polyhedron(object):
 
         # check emptyness, boundedness, and full-dimensionality
         if self.empty:
-            raise ValueError('cannot project empty polyhedra.')
+            raise ValueError("cannot project empty polyhedra.")
         if not self.bounded:
-            raise ValueError('cannot project unbounded polyhedra.')
+            raise ValueError("cannot project unbounded polyhedra.")
         if self.C.shape[0] > 0:
-            raise ValueError('cannot project lower-dimensional polyhedra.')
+            raise ValueError("cannot project lower-dimensional polyhedra.")
 
         # call convex-hull method for orthogonal projections
         A, b, vertices = convex_hull_method(self.A, self.b, residual_dimensions)
@@ -870,13 +870,12 @@ class Polyhedron(object):
 
         # create polyhedron
         A = hull.equations[:, :-1]
-        b = - hull.equations[:, -1:].flatten()
+        b = -hull.equations[:, -1:].flatten()
         p = Polyhedron(A, b)
 
         return p
 
-
-    def plot(self, residual_dimensions=[0,1], **kwargs):
+    def plot(self, residual_dimensions=[0, 1], **kwargs):
         """
         Plots the 2d projection of the polyhedron in the given dimension.
         It assumes the polyhedron to be bounded and not empty.
@@ -891,37 +890,38 @@ class Polyhedron(object):
 
         # check dimensions
         if len(residual_dimensions) != 2:
-            raise ValueError('wrong number of residual dimensions.')
+            raise ValueError("wrong number of residual dimensions.")
 
         # extract vertices components
         if self.vertices is None:
-            print('Cannot plot unbounded or empty polyhedra.')
+            print("Cannot plot unbounded or empty polyhedra.")
             return
 
         # call qhull thorugh scipy for the convex hull (needed to order the vertices in counterclockwise order)
-        vertices = np.vstack(self.vertices)[:,residual_dimensions]
+        vertices = np.vstack(self.vertices)[:, residual_dimensions]
         hull = ConvexHull(vertices)
         vertices = [hull.points[i].tolist() for i in hull.vertices]
         vertices += [vertices[0]]
 
         # create path
-        codes = [Path.MOVETO] + [Path.LINETO]*(len(vertices)-2) + [Path.CLOSEPOLY]
+        codes = [Path.MOVETO] + [Path.LINETO] * (len(vertices) - 2) + [Path.CLOSEPOLY]
         path = Path(vertices, codes)
 
         # set up plot
         ax = plt.gca()
         patch = patches.PathPatch(path, **kwargs)
         ax.add_patch(patch)
-        plt.xlabel(r'$x_' + str(residual_dimensions[0]+1) + '$')
-        plt.ylabel(r'$x_' + str(residual_dimensions[1]+1) + '$')
+        plt.xlabel(r"$x_" + str(residual_dimensions[0] + 1) + "$")
+        plt.ylabel(r"$x_" + str(residual_dimensions[1] + 1) + "$")
         ax.autoscale_view()
 
         return
 
+
 def get_matrices_affine_expression(x, expr):
     """
     Extracts from the symbolic affine expression the matrices such that expr(x) = A x - b.
-    
+
     Arguments
     ----------
     x : sympy matrix filled with sympy symbols
@@ -934,9 +934,10 @@ def get_matrices_affine_expression(x, expr):
     A = np.array(expr.jacobian(x)).astype(np.float64)
 
     # offset term
-    b = - np.array(expr.subs({xi:0 for xi in x})).astype(np.float64).flatten()
-    
+    b = -np.array(expr.subs({xi: 0 for xi in x})).astype(np.float64).flatten()
+
     return A, b
+
 
 def convex_hull_method(A, b, resiudal_dimensions):
     """
@@ -968,36 +969,28 @@ def convex_hull_method(A, b, resiudal_dimensions):
     # reorder coordinates
     n = len(resiudal_dimensions)
     dropped_dimensions = [i for i in range(A.shape[1]) if i not in resiudal_dimensions]
-    A = np.hstack((
-        A[:, resiudal_dimensions],
-        A[:, dropped_dimensions]
-        ))
+    A = np.hstack((A[:, resiudal_dimensions], A[:, dropped_dimensions]))
 
     # initialize projection
     vertices = _get_two_vertices(A, b, n)
     if n == 1:
-        E = np.array([[1.],[-1.]])
-        f = np.array([
-            max(v[0] for v in vertices),
-            - min(v[0] for v in vertices)
-            ])
+        E = np.array([[1.0], [-1.0]])
+        f = np.array([max(v[0] for v in vertices), -min(v[0] for v in vertices)])
         return E, f, vertices
     vertices = _get_inner_simplex(A, b, vertices)
 
     # expand facets
-    hull = ConvexHull(
-        np.vstack(vertices),
-        incremental=True
-        )
+    hull = ConvexHull(np.vstack(vertices), incremental=True)
     hull = _expand_simplex(A, b, hull)
     hull.close()
 
     # get outputs
     E = hull.equations[:, :-1]
-    f = - hull.equations[:, -1:].flatten()
+    f = -hull.equations[:, -1:].flatten()
     vertices = hull.points
 
     return E, f, vertices
+
 
 def _get_two_vertices(A, b, n):
     """
@@ -1019,20 +1012,18 @@ def _get_two_vertices(A, b, n):
     """
 
     # select any direction to explore (it has to belong to the projected space, i.e. a_i = 0 for all i > n)
-    a = np.concatenate((
-        np.ones(1),
-        np.zeros(A.shape[1]-1)
-        ))
+    a = np.concatenate((np.ones(1), np.zeros(A.shape[1] - 1)))
 
     # minimize and maximize in the given direction
     vertices = []
     for f in [a, -a]:
         sol = linear_program(f, A, b)
-        vertices.append(sol['argmin'][:n])
+        vertices.append(sol["argmin"][:n])
 
     return vertices
 
-def _get_inner_simplex(A, b, vertices, tol=1.e-7):
+
+def _get_inner_simplex(A, b, vertices, tol=1.0e-7):
     """
     Constructs a simplex contained in the porjection.
 
@@ -1057,20 +1048,21 @@ def _get_inner_simplex(A, b, vertices, tol=1.e-7):
     n = vertices[0].size
 
     # expand increasing at every iteration the dimension of the space
-    for i in range(2, n+1):
+    for i in range(2, n + 1):
         a, d = plane_through_points([v[:i] for v in vertices])
-        f = np.concatenate((a, np.zeros(A.shape[1]-i)))
+        f = np.concatenate((a, np.zeros(A.shape[1] - i)))
         sol = linear_program(f, A, b)
 
         # check the length of the expansion wrt to the plane, if zero expand in the opposite direction
-        expansion = np.abs(a.dot(sol['argmin'][:i]) - d) # >= 0
+        expansion = np.abs(a.dot(sol["argmin"][:i]) - d)  # >= 0
         if expansion < tol:
             sol = linear_program(-f, A, b)
-        vertices.append(sol['argmin'][:n])
+        vertices.append(sol["argmin"][:n])
 
     return vertices
 
-def _expand_simplex(A, b, hull, tol=1.e-7):
+
+def _expand_simplex(A, b, hull, tol=1.0e-7):
     """
     Expands the internal simplex to cover all the projection.
 
@@ -1102,10 +1094,9 @@ def _expand_simplex(A, b, hull, tol=1.e-7):
 
         # check if every facet of the inner approximation belongs to the projection
         for i in range(hull.equations.shape[0]):
-
             # get normalized halfplane {x | a' x <= d} of the ith facet
             a = hull.equations[i, :-1]
-            d = - hull.equations[i, -1]
+            d = -hull.equations[i, -1]
             a_norm = np.linalg.norm(a)
             a /= a_norm
             b /= a_norm
@@ -1116,17 +1107,14 @@ def _expand_simplex(A, b, hull, tol=1.e-7):
                 a_explored.append(a)
 
                 # maximize in the direction a
-                f = np.concatenate((
-                    - a,
-                    np.zeros(A.shape[1]-n)
-                    ))
+                f = np.concatenate((-a, np.zeros(A.shape[1] - n)))
                 sol = linear_program(f, A, b)
 
                 # check if expansion wrt to the halfplane is greater than zero
-                expansion = - sol['min'] - d # >= 0
+                expansion = -sol["min"] - d  # >= 0
                 if expansion > tol:
                     convergence = False
-                    hull.add_points(sol['argmin'][:n].reshape(1,n))
+                    hull.add_points(sol["argmin"][:n].reshape(1, n))
                     break
 
     return hull

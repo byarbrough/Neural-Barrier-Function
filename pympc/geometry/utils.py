@@ -1,6 +1,7 @@
 # external imports
 import numpy as np
 
+
 def nullspace_basis(A):
     """
     Uses SVD to find a basis of the nullsapce of A.
@@ -21,11 +22,12 @@ def nullspace_basis(A):
 
     # cut to the dimension of the rank
     rank = np.linalg.matrix_rank(A)
-    Z = V[:,rank:]
+    Z = V[:, rank:]
 
     return Z
 
-def linearly_independent_rows(A, tol=1.e-6):
+
+def linearly_independent_rows(A, tol=1.0e-6):
     """
     uses the QR decomposition to find the indices of a set of linear independent rows of the matrix A.
 
@@ -50,6 +52,7 @@ def linearly_independent_rows(A, tol=1.e-6):
     independent_rows = list(np.where(R_diag > tol)[0])
 
     return sorted(independent_rows)
+
 
 def plane_through_points(points):
     """
@@ -79,17 +82,18 @@ def plane_through_points(points):
     a = np.linalg.solve(P, np.ones(points[0].size))
 
     # go back to the original coordinates
-    d = 1. - a.dot(offset)
+    d = 1.0 - a.dot(offset)
 
     # scale and select sign of the result
     a_norm = np.linalg.norm(a)
     d_sign = np.sign(d)
-    if d_sign == 0.:
-        d_sign = 1.
+    if d_sign == 0.0:
+        d_sign = 1.0
     a /= a_norm * d_sign
     d /= a_norm * d_sign
 
     return a, d
+
 
 def same_rows(A, B, normalize=True):
     """
@@ -130,6 +134,7 @@ def same_rows(A, B, normalize=True):
 
     return True
 
+
 def same_vectors(v_list, u_list):
     """
     Tests that two lists of array contain the same elements.
@@ -150,7 +155,7 @@ def same_vectors(v_list, u_list):
     # check inputs
     for z_list in [v_list, u_list]:
         if any(len(z.shape) >= 2 for z in z_list):
-            raise ValueError('input vectors must be 1-dimensional arrays.')
+            raise ValueError("input vectors must be 1-dimensional arrays.")
 
     # construct matrices
     V = np.vstack(v_list)
